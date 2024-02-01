@@ -1071,7 +1071,7 @@ Unset Primitive Projections.
 
 Definition disp_tt := {| d1 := tt; d2 := tt |}.
 
-#[key="T", primitive]
+#[key="T"] (* TODO: primitive *)
 HB.mixin Record isDuallyPOrder (d : disp_t) T of Equality T := {
   le       : rel T;
   lt       : rel T;
@@ -1087,13 +1087,13 @@ HB.mixin Record isDuallyPOrder (d : disp_t) T of Equality T := {
 HB.structure Definition POrder (d : disp_t) :=
   { T of Choice T & isDuallyPOrder d T }.
 
-#[key="T", primitive]
+#[key="T"] (* TODO: primitive *)
 HB.mixin Record hasBottom d T of POrder d T := {
   bottom : T;
   le0x : forall x, le bottom x;
 }.
 
-#[key="T", primitive]
+#[key="T"] (* TODO: primitive *)
 HB.mixin Record hasTop d T of POrder d T := {
   top : T;
   lex1 : forall x, le x top;
@@ -1105,85 +1105,6 @@ HB.structure Definition BPOrder d := { T of hasBottom d T & POrder d T }.
 HB.structure Definition TPOrder d := { T of hasTop d T & POrder d T }.
 #[short(type="tbPOrderType")]
 HB.structure Definition TBPOrder d := { T of hasTop d T & BPOrder d T }.
-
-HB.factory Record isPOrder (d : disp_t) T of Equality T := {
-  le       : rel T;
-  lt       : rel T;
-  lt_def   : forall x y, lt x y = (y != x) && (le x y);
-  le_refl  : reflexive     le;
-  le_anti  : antisymmetric le;
-  le_trans : transitive    le;
-}.
-
-HB.builders Context d T of isPOrder d T.
-
-Fact gt_def x y : lt y x = (y != x) && (le y x).
-Proof. by rewrite lt_def eq_sym. Qed.
-
-Fact ge_anti : antisymmetric (fun x y => le y x).
-Proof. by move=> ? ? /le_anti ->. Qed.
-
-HB.instance Definition _ := @isDuallyPOrder.Build d T
-  le lt lt_def gt_def le_refl le_anti ge_anti le_trans.
-
-HB.end.
-
-HB.factory Record Le_isPOrder (d : disp_t) T of Equality T := {
-  le       : rel T;
-  le_refl  : reflexive     le;
-  le_anti  : antisymmetric le;
-  le_trans : transitive    le;
-}.
-
-HB.builders Context d T of Le_isPOrder d T.
-(* TODO: print nice error message when keyed type is not provided *)
-HB.instance Definition _ := @isPOrder.Build d T
-  le _ (fun _ _ => erefl) le_refl le_anti le_trans.
-HB.end.
-
-HB.factory Record LtLe_isPOrder (d : disp_t) T of Equality T := {
-  le : rel T;
-  lt : rel T;
-  le_def   : forall x y, le x y = (x == y) || lt x y;
-  lt_irr   : irreflexive lt;
-  lt_trans : transitive lt;
-}.
-
-HB.builders Context d T of LtLe_isPOrder d T.
-
-Let le_refl : reflexive le. Proof. by move=> x; rewrite le_def eqxx. Qed.
-
-Let le_anti : antisymmetric le.
-Proof.
-move=> x y; rewrite !le_def.
-have [//|_/=] := eqVneq x y => /andP[xy yx].
-by have := lt_trans xy yx; rewrite lt_irr.
-Qed.
-
-Let le_trans : transitive le.
-Proof.
-move=> y x z; rewrite !le_def; have [->|_]//= := eqVneq x y.
-by case: (eqVneq y z) => /= [<- ->|_ /lt_trans yx /yx ->]; rewrite orbT.
-Qed.
-
-Let lt_def x y : lt x y = (y != x) && (le x y).
-Proof. by rewrite le_def; case: eqVneq => //= ->; rewrite lt_irr. Qed.
-
-HB.instance Definition _ := @isPOrder.Build d T
-  le lt lt_def le_refl le_anti le_trans.
-
-HB.end.
-
-HB.factory Record Lt_isPOrder (d : disp_t) T of Equality T := {
-  lt       : rel T;
-  lt_irr   : irreflexive lt;
-  lt_trans : transitive  lt;
-}.
-
-HB.builders Context d T of Lt_isPOrder d T.
-HB.instance Definition _ := @LtLe_isPOrder.Build d T
-  _ lt (fun _ _ => erefl) lt_irr lt_trans.
-HB.end.
 
 Module POrderExports.
 Arguments le_trans {d s} [_ _ _].
@@ -1382,7 +1303,7 @@ Coercion le_of_leif : leif >-> is_true.
 End POCoercions.
 HB.export POCoercions.
 
-#[key="T", primitive]
+#[key="T"] (* TODO: primitive *)
 HB.mixin Record POrder_isMeetSemilattice d T of POrder d T := {
   meet : T -> T -> T;
   meetC : commutative meet;
@@ -1390,7 +1311,7 @@ HB.mixin Record POrder_isMeetSemilattice d T of POrder d T := {
   leEmeet : forall x y, (x <= y) = (meet x y == x);
 }.
 
-#[key="T", primitive]
+#[key="T"] (* TODO: primitive *)
 HB.mixin Record POrder_isJoinSemilattice d T of POrder d T := {
   join : T -> T -> T;
   joinC : commutative join;
@@ -1442,34 +1363,6 @@ HB.structure Definition TLattice d := { T of Lattice d T & hasTop d T }.
 
 #[short(type="tbLatticeType")]
 HB.structure Definition TBLattice d := { T of BLattice d T & hasTop d T }.
-
-HB.factory Record POrder_isLattice d (T : Type) of POrder d T := {
-  meet : T -> T -> T;
-  join : T -> T -> T;
-  meetC : commutative meet;
-  joinC : commutative join;
-  meetA : associative meet;
-  joinA : associative join;
-  joinKI : forall y x, meet x (join x y) = x;
-  meetKU : forall y x, join x (meet x y) = x;
-  leEmeet : forall x y, (x <= y) = (meet x y == x);
-}.
-
-HB.builders Context d T of POrder_isLattice d T.
-
-Lemma leEjoin x y : (y <= x) = (join x y == x).
-Proof.
-rewrite leEmeet; apply/eqP/eqP => <-.
-  by rewrite meetC meetKU.
-by rewrite joinC joinKI.
-Qed.
-
-HB.instance Definition _ := @POrder_isMeetSemilattice.Build d T
-  meet meetC meetA leEmeet.
-HB.instance Definition _ := @POrder_isJoinSemilattice.Build d T
-  join joinC joinA leEjoin.
-
-HB.end.
 
 Module LatticeExports.
 #[deprecated(since="mathcomp 2.0.0", note="Use Lattice.clone instead.")]
@@ -1605,7 +1498,7 @@ Notation "\meet_ ( i 'in' A ) F" :=
 End TLatticeSyntax.
 HB.export TLatticeSyntax.
 
-#[key="T", primitive]
+#[key="T"] (* TODO: primitive *)
 HB.mixin Record Lattice_isDistributive d (T : Type) of Lattice d T := {
   meetUl : @left_distributive T T meet join;
   joinIl : @left_distributive T T join meet; (* dual of meetUl *)
@@ -1627,28 +1520,6 @@ HB.structure Definition TDistrLattice d :=
 HB.structure Definition TBDistrLattice d :=
   { T of BDistrLattice d T  & hasTop d T }.
 
-HB.factory Record Lattice_Meet_isDistrLattice d T of Lattice d T := {
-  meetUl : @left_distributive T T meet join;
-}.
-
-HB.builders Context d T of Lattice_Meet_isDistrLattice d T.
-
-Let meetUr : right_distributive (@meet _ T) (@join _ T).
-Proof.
-move=> x y z.
-Check meetC.
-rewrite ![x `&` _]meetC. (* FIXME *)
-by rewrite [LHS]meetUl.
-Qed.
-
-Let joinIl : left_distributive (@join _ T) (@meet _ T).
-Proof.
-Admitted.
-
-HB.instance Definition _ := Lattice_isDistributive.Build d T meetUl joinIl.
-
-HB.end.
-
 Module BDistrLatticeExports.
 #[deprecated(since="mathcomp 2.0.0", note="Use BDistrLattice.clone instead.")]
 Notation "[ 'bDistrLatticeType' 'of' T ]" := (BDistrLattice.clone _ T%type _)
@@ -1663,7 +1534,7 @@ Notation "[ 'tbDistrLatticeType' 'of' T ]" := (TBDistrLattice.clone _ T%type _)
 End TBDistrLatticeExports.
 HB.export TBDistrLatticeExports.
 
-#[key="T", primitive]
+#[key="T"] (* TODO: primitive *)
 HB.mixin Record DistrLattice_isTotal d T of DistrLattice d T :=
   { le_total : total (<=%O : rel T) }.
 
@@ -1680,18 +1551,19 @@ HB.structure Definition TTotal d := { T of Total d T & hasTop d T }.
 #[short(type="tbOrderType")]
 HB.structure Definition TBTotal d := { T of BTotal d T & hasTop d T }.
 
-#[key="T", primitive]
+#[key="T"] (* TODO: primitive *)
 HB.mixin Record hasRelativeComplement d T of DistrLattice d T := {
+  (* rcompl x y z is the complement of z in the interval [x, y]. *)
   rcompl : T -> T -> T -> T;
-  rcomplKI : forall a b c, a <= c -> c <= b -> c `&` rcompl a b c = a;
-  rcomplKU : forall a b c, a <= c -> c <= b -> c `|` rcompl a b c = b;
+  rcomplKI : forall x y z, x <= y -> (x `|` z) `&` rcompl x y z = x;
+  rcomplKU : forall x y z, x <= y -> (y `&` z) `|` rcompl x y z = y;
 }.
 
 #[short(type="cDistrLatticeType")]
 HB.structure Definition CDistrLattice d :=
   { T of DistrLattice d T & hasRelativeComplement d T }.
 
-#[key="T", primitive]
+#[key="T"] (* TODO: primitive *)
 HB.mixin Record hasSectionalComplement d T
          of CDistrLattice d T & hasBottom d T := {
   diff : T -> T -> T;
@@ -1702,7 +1574,7 @@ HB.mixin Record hasSectionalComplement d T
 HB.structure Definition CBDistrLattice d :=
   { T of CDistrLattice d T & hasBottom d T & hasSectionalComplement d T }.
 
-#[key="T", primitive]
+#[key="T"] (* TODO: primitive *)
 HB.mixin Record hasDualSectionalComplement d T
          of CDistrLattice d T & hasTop d T := {
   codiff : T -> T -> T;
@@ -1720,11 +1592,11 @@ Module Import CBDistrLatticeSyntax.
 Notation "x `\` y" := (diff x y) : order_scope.
 End CBDistrLatticeSyntax.
 
-#[key="T", primitive]
+#[key="T"] (* TODO: primitive *)
 HB.mixin Record hasComplement d T of
          TBDistrLattice d T & CBDistrLattice d T := {
   compl : T -> T;
-  comlpE : forall x : T, compl x = rcompl (\bot : T) \top x; (* FIXME? *)
+  complErcompl : forall x : T, compl x = rcompl (\bot : T) \top x; (* FIXME? *)
 }.
 
 #[short(type="ctbDistrLatticeType")]
@@ -2005,12 +1877,6 @@ HB.instance Definition _ d (T : bPOrderType d) :=
 Lemma topEdual d (T : bPOrderType d) : (dual_top : T^d) = \bot :> T.
 Proof. by []. Qed.
 
-HB.instance Definition _ d (T : tbPOrderType d) := POrder.on T^d.
-HB.instance Definition _ d (T : finPOrderType d) := POrder.on T^d.
-Fail HB.instance Definition _ d (T : finTPOrderType d) := POrder.on T^d.
-Fail HB.instance Definition _ d (T : finBPOrderType d) := POrder.on T^d.
-HB.instance Definition _ d (T : finTBPOrderType d) := POrder.on T^d.
-
 HB.instance Definition _ d (T : joinSemilatticeType d) :=
   POrder_isMeetSemilattice.Build (dual_display d) T^d joinC joinA leEjoin.
 
@@ -2024,6 +1890,14 @@ HB.instance Definition _ d (T : meetSemilatticeType d) :=
 Lemma joinEdual d (T : meetSemilatticeType d) (x y : T) :
   ((x : T^d) `|^d` y) = (x `&` y).
 Proof. by []. Qed.
+
+HB.saturate.
+(*
+HB.instance Definition _ d (T : tbPOrderType d) := POrder.on T^d.
+HB.instance Definition _ d (T : finPOrderType d) := POrder.on T^d.
+Fail HB.instance Definition _ d (T : finTPOrderType d) := POrder.on T^d.
+Fail HB.instance Definition _ d (T : finBPOrderType d) := POrder.on T^d.
+HB.instance Definition _ d (T : finTBPOrderType d) := POrder.on T^d.
 
 Fail HB.instance Definition _ d (T : tJoinSemilatticeType d) := POrder.on T^d.
 Fail HB.instance Definition _ d (T : bJoinSemilatticeType d) := POrder.on T^d.
@@ -2048,9 +1922,16 @@ HB.instance Definition _ d (T : tbLatticeType d) := POrder.on T^d.
 
 HB.instance Definition _ d (T : finLatticeType d) := POrder.on T^d.
 HB.instance Definition _ d (T : finTBLatticeType d) := POrder.on T^d.
+*)
 
 HB.instance Definition _ d (T : distrLatticeType d) :=
   Lattice_isDistributive.Build (dual_display d) T^d joinIl meetUl.
+
+HB.instance Definition _ d (T : orderType d) :=
+  DistrLattice_isTotal.Build (dual_display d) T^d (fun x y => le_total y x).
+
+HB.saturate.
+(*
 Fail HB.instance Definition _ d (T : tDistrLatticeType d) := POrder.on T^d.
 Fail HB.instance Definition _ d (T : bDistrLatticeType d) := POrder.on T^d.
 HB.instance Definition _ d (T : tbDistrLatticeType d) := POrder.on T^d.
@@ -2058,19 +1939,17 @@ HB.instance Definition _ d (T : tbDistrLatticeType d) := POrder.on T^d.
 HB.instance Definition _ d (T : finDistrLatticeType d) := POrder.on T^d.
 HB.instance Definition _ d (T : finTBDistrLatticeType d) := POrder.on T^d.
 
-HB.instance Definition _ d (T : orderType d) :=
-  DistrLattice_isTotal.Build (dual_display d) T^d (fun x y => le_total y x).
 Fail HB.instance Definition _ d (T : tOrderType d) := POrder.on T^d.
 Fail HB.instance Definition _ d (T : bOrderType d) := POrder.on T^d.
 HB.instance Definition _ d (T : tbOrderType d) := POrder.on T^d.
 
 HB.instance Definition _ d (T : finOrderType d) := POrder.on T^d.
 HB.instance Definition _ d (T : finTBOrderType d) := POrder.on T^d.
+*)
 
 HB.instance Definition _ d (T : cDistrLatticeType d) :=
   hasRelativeComplement.Build (dual_display d) T^d
-    (fun a b c Hac Hcb => rcomplKU b a c Hcb Hac)
-    (fun a b c Hac Hcb => rcomplKI b a c Hcb Hac).
+    (fun x y => rcomplKU y x) (fun x y => rcomplKI y x).
 HB.instance Definition _ d (T : ctDistrLatticeType d) :=
   hasSectionalComplement.Build (dual_display d) T^d codiffE.
 HB.instance Definition _ d (T : cbDistrLatticeType d) :=
@@ -2078,6 +1957,7 @@ HB.instance Definition _ d (T : cbDistrLatticeType d) :=
 HB.instance Definition _ d (T : ctbDistrLatticeType d) := POrder.on T^d.
 
 End DualOrder.
+HB.export DualOrder.
 
 (**********)
 (* THEORY *)
@@ -2085,9 +1965,7 @@ End DualOrder.
 
 Module Import POrderTheory.
 Section POrderTheory.
-
-Context {disp : unit} {T : porderType disp}.
-
+Context {disp : disp_t} {T : porderType disp}.
 Implicit Types (x y : T) (s : seq T).
 
 Lemma geE x y : ge x y = (y <= x). Proof. by []. Qed.
@@ -2168,7 +2046,7 @@ Proof.
 by move=> le_xy; apply/negP => /lt_le_trans /(_ le_xy); rewrite ltxx.
 Qed.
 
-Lemma lt_geF x y : (x < y) -> y <= x = false.
+Lemma lt_geF x y : x < y -> y <= x = false.
 Proof.
 by move=> le_xy; apply/negP => /le_lt_trans /(_ le_xy); rewrite ltxx.
 Qed.
@@ -2595,7 +2473,7 @@ Lemma comparable_maxr z : {in >=<%O z &, forall x y, z >=< max x y}.
 Proof. by move=> x y cmp_xz cmp_yz; rewrite /max; case: ifP. Qed.
 
 Section Comparable2.
-Variables (z x y : T) (cmp_xy : x >=< y).
+Context (z x y : T) (cmp_xy : x >=< y).
 
 Lemma comparable_minC : min x y = min y x.
 Proof. by case: comparableP cmp_xy. Qed.
@@ -2697,7 +2575,7 @@ Proof. by case: C; rewrite /= (comparable_ge_max, comparable_gt_max). Qed.
 End Comparable2.
 
 Section Comparable3.
-Variables (x y z : T) (cmp_xy : x >=< y) (cmp_xz : x >=< z) (cmp_yz : y >=< z).
+Context (x y z : T) (cmp_xy : x >=< y) (cmp_xz : x >=< z) (cmp_yz : y >=< z).
 Let P := comparableP.
 
 Lemma comparable_minA : min x (min y z) = min (min x y) z.
@@ -2801,9 +2679,8 @@ by rewrite comparable_min_maxl// 1?comparable_sym.
 Qed.
 
 Section ArgExtremum.
-
 Context (I : finType) (i0 : I) (P : {pred I}) (F : I -> T) (Pi0 : P i0).
-Hypothesis F_comparable : {in P &, forall i j, F i >=< F j}.
+Context (F_comparable : {in P &, forall i j, F i >=< F j}).
 
 Lemma comparable_arg_minP: extremum_spec <=%O P F (arg_min i0 P F).
 Proof.
@@ -2850,8 +2727,7 @@ Lemma comparable_bigr x x0 op I (P : pred I) F (s : seq I) :
 Proof. by move=> *; elim/big_ind : _. Qed.
 
 Section bigminmax.
-
-Variables (I : Type) (r : seq I) (f : I -> T) (x0 x : T) (P : pred I).
+Context (I : Type) (r : seq I) (f : I -> T) (x0 x : T) (P : pred I).
 
 Lemma bigmax_le : x0 <= x -> (forall i, P i -> f i <= x) ->
   \big[max/x0]_(i <- r | P i) f i <= x.
@@ -2872,11 +2748,12 @@ Proof. by move=> ? ?; elim/big_ind: _ => // *; rewrite minEle; case: ifPn. Qed.
 End bigminmax.
 
 End POrderTheory.
+
 #[global] Hint Resolve comparable_minr comparable_minl : core.
 #[global] Hint Resolve comparable_maxr comparable_maxl : core.
 
 Section ContraTheory.
-Context {disp1 disp2 : unit} {T1 : porderType disp1} {T2 : porderType disp2}.
+Context {disp1 disp2 : disp_t} {T1 : porderType disp1} {T2 : porderType disp2}.
 Implicit Types (x y : T1) (z t : T2) (b : bool) (m n : nat) (P : Prop).
 
 Lemma comparable_contraTle b x y : x >=< y -> (y < x -> ~~ b) -> (b -> x <= y).
@@ -2980,15 +2857,11 @@ Proof. by do 2![case: comparableP => //= ?]. Qed.
 End ContraTheory.
 
 Section POrderMonotonyTheory.
-
-Context {disp disp' : unit}.
-Context {T : porderType disp} {T' : porderType disp'}.
-Implicit Types (m n p : nat) (x y z : T) (u v w : T').
-Variables (D D' : {pred T}) (f : T -> T').
+Context {disp disp' : disp_t} {T : porderType disp} {T' : porderType disp'}.
+Context (D D' : {pred T}) (f : T -> T').
 
 Let leT_anti := @le_anti _ T.
-Let leT'_anti := @le_anti _ T'.
-Hint Resolve lexx lt_neqAle lt_def : core.
+Hint Resolve lexx lt_neqAle : core.
 
 Let ge_antiT : antisymmetric (>=%O : rel T).
 Proof. by move=> ? ? /le_anti. Qed.
@@ -3071,21 +2944,65 @@ Arguments max_idPr {disp T x y}.
 Arguments comparable_min_idPr {disp T x y _}.
 Arguments comparable_max_idPl {disp T x y _}.
 
-Module Import LatticeTheoryMeet.
-Section LatticeTheoryMeet.
-Context {disp : unit} {L : latticeType disp}.
+Module Import BPOrderTheory.
+Section BPOrderTheory.
+Context {disp : disp_t} {T : bPOrderType disp}.
+Implicit Types (x y : T).
+
+Lemma le0x x : \bot <= x. Proof. exact: le0x. Qed.
+
+Lemma lex0 x : (x <= \bot) = (x == \bot).
+Proof. by rewrite le_eqVlt (le_gtF (le0x _)) orbF. Qed.
+
+Lemma ltx0 x : (x < \bot) = false.
+Proof. by rewrite lt_neqAle lex0 andNb. Qed.
+
+Lemma lt0x x : (\bot < x) = (x != \bot).
+Proof. by rewrite lt_neqAle le0x andbT eq_sym. Qed.
+
+Variant eq0_xor_gt0 x : bool -> bool -> Set :=
+    Eq0NotPOs : x = \bot -> eq0_xor_gt0 x true false
+  | POsNotEq0 : \bot < x -> eq0_xor_gt0 x false true.
+
+Lemma posxP x : eq0_xor_gt0 x (x == \bot) (\bot < x).
+Proof. by rewrite lt0x; have [] := eqVneq; constructor; rewrite ?lt0x. Qed.
+
+End BPOrderTheory.
+End BPOrderTheory.
+
+Module Import TPOrderTheory.
+Section TPOrderTheory.
+Context {disp : disp_t} {T : tPOrderType disp}.
+Implicit Types (x y : T).
+
+Lemma lex1 x : x <= \top. Proof. exact: lex1. Qed.
+Lemma le1x x : (\top <= x) = (x == \top). Proof. exact: (@lex0 _ T^d). Qed.
+Lemma lt1x x : (\top < x) = false. Proof. exact: (@ltx0 _ T^d). Qed.
+Lemma ltx1 x : (x < \top) = (x != \top). Proof. exact: (@lt0x _ T^d). Qed.
+
+End TPOrderTheory.
+End TPOrderTheory.
+
+#[global] Hint Extern 0 (is_true (\bot <= _)) => exact: le0x : core.
+#[global] Hint Extern 0 (is_true (_ <= \top)) => exact: lex1 : core.
+
+Module Import MeetTheory.
+Section MeetTheory.
+Context {disp : disp_t} {L : meetSemilatticeType disp}.
 Implicit Types (x y : L).
 
-(* lattice theory *)
+Lemma meetC : commutative (@meet _ L). Proof. exact: meetC. Qed.
+Lemma meetA : associative (@meet _ L). Proof. exact: meetA. Qed.
+Lemma leEmeet x y : (x <= y) = (x `&` y == x). Proof. exact: leEmeet. Qed.
+
+Lemma meetxx : idempotent (@meet _ L).
+Proof. by move=> x; apply/eqP; rewrite -leEmeet. Qed.
 Lemma meetAC : right_commutative (@meet _ L).
 Proof. by move=> x y z; rewrite -!meetA [X in _ `&` X]meetC. Qed.
 Lemma meetCA : left_commutative (@meet _ L).
 Proof. by move=> x y z; rewrite !meetA [X in X `&` _]meetC. Qed.
 Lemma meetACA : interchange (@meet _ L) (@meet _ L).
 Proof. by move=> x y z t; rewrite !meetA [X in X `&` _]meetAC. Qed.
-
-Lemma meetxx x : x `&` x = x.
-Proof. by rewrite -[X in _ `&` X](meetKU x) joinKI. Qed.
 
 Lemma meetKI y x : x `&` (x `&` y) = x `&` y.
 Proof. by rewrite meetA meetxx. Qed.
@@ -3142,24 +3059,119 @@ Proof. by rewrite meetC eq_meetl. Qed.
 Lemma leI2 x y z t : x <= z -> y <= t -> x `&` y <= z `&` t.
 Proof. by move=> xz yt; rewrite lexI !leIx2 ?xz ?yt ?orbT //. Qed.
 
-End LatticeTheoryMeet.
-End LatticeTheoryMeet.
+End MeetTheory.
+End MeetTheory.
 
-Module Import LatticeTheoryJoin.
-Section LatticeTheoryJoin.
-Context {disp : unit} {L : latticeType disp}.
+Arguments meet_idPl {disp L x y}.
+Arguments meet_idPr {disp L x y}.
+
+Module Import BMeetTheory.
+Section BMeetTheory.
+Context {disp : disp_t} {L : bMeetSemilatticeType disp}.
+
+Lemma meet0x : left_zero \bot (@meet _ L).
+Proof. by move=> x; apply/eqP; rewrite -leEmeet. Qed.
+
+Lemma meetx0 : right_zero \bot (@meet _ L).
+Proof. by move=> x; rewrite meetC meet0x. Qed.
+
+HB.instance Definition _ := Monoid.isMulLaw.Build L \bot meet meet0x meetx0.
+
+End BMeetTheory.
+End BMeetTheory.
+
+Module Import TMeetTheory.
+Section TMeetTheory.
+Context {disp : disp_t} {L : tMeetSemilatticeType disp}.
+Implicit Types (I : finType) (T : eqType) (x y : L).
+
+Lemma meetx1 : right_id \top (@meet _ L).
+Proof. by move=> x; apply/eqP; rewrite -leEmeet. Qed.
+
+Lemma meet1x : left_id \top (@meet _ L).
+Proof. by move=> x; apply/eqP; rewrite meetC meetx1. Qed.
+
+Lemma meet_eq1 x y : (x `&` y == \top) = (x == \top) && (y == \top).
+Proof.
+apply/idP/idP; last by move=> /andP[/eqP-> /eqP->]; rewrite meetx1.
+by move=> /eqP xIy1; rewrite -!le1x -xIy1 leIl leIr.
+Qed.
+
+HB.instance Definition _ := Monoid.isComLaw.Build L \top meet
+  (@meetA _ L) (@meetC _ L) meet1x.
+
+Lemma meets_inf_seq T (r : seq T) (P : {pred T}) (F : T -> L) (x : T) :
+  x \in r -> P x -> \meet_(i <- r | P i) F i <= F x.
+Proof. by move=> xr Px; rewrite (big_rem x) ?Px //= leIl. Qed.
+
+Lemma meets_max_seq T (r : seq T) (P : {pred T}) (F : T -> L) (x : T) (u : L) :
+  x \in r -> P x -> F x <= u -> \meet_(x <- r | P x) F x <= u.
+Proof. move=> ? ?; apply: le_trans; exact: meets_inf_seq. Qed.
+
+Lemma meets_inf I (j : I) (P : {pred I}) (F : I -> L) :
+   P j -> \meet_(i | P i) F i <= F j.
+Proof. exact: meets_inf_seq. Qed.
+
+Lemma meets_max I (j : I) (u : L) (P : {pred I}) (F : I -> L) :
+   P j -> F j <= u -> \meet_(i | P i) F i <= u.
+Proof. exact: meets_max_seq. Qed.
+
+Lemma meets_ge J (r : seq J) (P : {pred J}) (F : J -> L) (u : L) :
+  (forall x : J, P x -> u <= F x) -> u <= \meet_(x <- r | P x) F x.
+Proof. by move=> leFm; elim/big_rec: _ => // i x Px xu; rewrite lexI leFm. Qed.
+
+Lemma meetsP_seq T (r : seq T) (P : {pred T}) (F : T -> L) (l : L) :
+  reflect (forall x : T, x \in r -> P x -> l <= F x)
+          (l <= \meet_(x <- r | P x) F x).
+Proof.
+apply: (iffP idP) => leFm => [x xr Px|].
+  exact/(le_trans leFm)/meets_inf_seq.
+by rewrite big_seq_cond meets_ge// => x /andP[/leFm].
+Qed.
+
+Lemma meetsP I (l : L) (P : {pred I}) (F : I -> L) :
+   reflect (forall i : I, P i -> l <= F i) (l <= \meet_(i | P i) F i).
+Proof. by apply: (iffP (meetsP_seq _ _ _ _)) => H ? ?; apply: H. Qed.
+
+Lemma le_meets I (A B : {set I}) (F : I -> L) :
+   A \subset B -> \meet_(i in B) F i <= \meet_(i in A) F i.
+Proof. by move=> /subsetP AB; apply/meetsP => i iA; apply/meets_inf/AB. Qed.
+
+Lemma meets_setU I (A B : {set I}) (F : I -> L) :
+   \meet_(i in (A :|: B)) F i = \meet_(i in A) F i `&` \meet_(i in B) F i.
+Proof.
+rewrite -!big_enum; have /= <- := @big_cat _ _ meet.
+apply/eq_big_idem; first exact: meetxx.
+by move=> ?; rewrite mem_cat !mem_enum inE.
+Qed.
+
+Lemma meets_seq I (r : seq I) (F : I -> L) :
+   \meet_(i <- r) F i = \meet_(i in r) F i.
+Proof.
+by rewrite -big_enum; apply/eq_big_idem => ?; rewrite /= ?meetxx ?mem_enum.
+Qed.
+
+End TMeetTheory.
+End TMeetTheory.
+
+Module Import JoinTheory.
+Section JoinTheory.
+Context {disp : disp_t} {L : joinSemilatticeType disp}.
 Implicit Types (x y : L).
 
-(* lattice theory *)
+Lemma joinC : commutative (@join _ L). Proof. exact: joinC. Qed.
+Lemma joinA : associative (@join _ L). Proof. exact: joinA. Qed.
+Lemma leEjoin x y : (x <= y) = (x `|` y == y).
+Proof. by rewrite leEjoin joinC. Qed.
+
+Lemma joinxx : idempotent (@join _ L).
+Proof. exact: (@meetxx _ L^d). Qed.
 Lemma joinAC : right_commutative (@join _ L).
 Proof. exact: (@meetAC _ L^d). Qed.
 Lemma joinCA : left_commutative (@join _ L).
 Proof. exact: (@meetCA _ L^d). Qed.
 Lemma joinACA : interchange (@join _ L) (@join _ L).
 Proof. exact: (@meetACA _ L^d). Qed.
-
-Lemma joinxx x : x `|` x = x.
-Proof. exact: (@meetxx _ L^d). Qed.
 
 Lemma joinKU y x : x `|` (x `|` y) = x `|` y.
 Proof. exact: (@meetKI _ L^d). Qed.
@@ -3180,15 +3192,13 @@ Proof. exact: (@leIxr _ L^d). Qed.
 Lemma lexU2 x y z : (x <= y) || (x <= z) -> x <= y `|` z.
 Proof. exact: (@leIx2 _ L^d). Qed.
 
-Lemma leUr x y : x <= y `|` x.
-Proof. exact: (@leIr _ L^d). Qed.
-Lemma leUl x y : x <= x `|` y.
-Proof. exact: (@leIl _ L^d). Qed.
+Lemma leUr x y : x <= y `|` x. Proof. exact: (@leIr _ L^d). Qed.
+Lemma leUl x y : x <= x `|` y. Proof. exact: (@leIl _ L^d). Qed.
 
-Lemma join_idPr {x y} : reflect (x `|` y = y) (x <= y).
-Proof. exact: (@meet_idPr _ L^d). Qed.
 Lemma join_idPl {x y} : reflect (y `|` x = y) (x <= y).
 Proof. exact: (@meet_idPl _ L^d). Qed.
+Lemma join_idPr {x y} : reflect (x `|` y = y) (x <= y).
+Proof. exact: (@meet_idPr _ L^d). Qed.
 
 Lemma join_l x y : y <= x -> x `|` y = x. Proof. exact/join_idPl. Qed.
 Lemma join_r x y : x <= y -> x `|` y = y. Proof. exact/join_idPr. Qed.
@@ -3205,6 +3215,105 @@ Proof. exact: (@eq_meetr _ L^d). Qed.
 
 Lemma leU2 x y z t : x <= z -> y <= t -> x `|` y <= z `|` t.
 Proof. exact: (@leI2 _ L^d). Qed.
+
+End JoinTheory.
+End JoinTheory.
+
+Arguments join_idPl {disp L x y}.
+Arguments join_idPr {disp L x y}.
+
+Module Import BJoinTheory.
+Section BJoinTheory.
+Context {disp : disp_t} {L : bJoinSemilatticeType disp}.
+Implicit Types (I : finType) (T : eqType) (x y : L).
+
+Lemma joinx0 : right_id \bot (@join _ L).
+Proof. exact: (@meetx1 _ L^d). Qed.
+Lemma join0x : left_id \bot (@join _ L).
+Proof. exact: (@meet1x _ L^d). Qed.
+
+Lemma join_eq0 x y : (x `|` y == \bot) = (x == \bot) && (y == \bot).
+Proof. exact: (@meet_eq1 _ L^d). Qed.
+
+HB.instance Definition _ := Monoid.isComLaw.Build L \bot join
+  (@joinA _ L) (@joinC _ L) join0x.
+
+Lemma joins_sup_seq T (r : seq T) (P : {pred T}) (F : T -> L) (x : T) :
+  x \in r -> P x -> F x <= \join_(i <- r | P i) F i.
+Proof. exact: (@meets_inf_seq _ L^d). Qed.
+
+Lemma joins_min_seq T (r : seq T) (P : {pred T}) (F : T -> L) (x : T) (l : L) :
+  x \in r -> P x -> l <= F x -> l <= \join_(x <- r | P x) F x.
+Proof. exact: (@meets_max_seq _ L^d). Qed.
+
+Lemma joins_sup I (j : I) (P : {pred I}) (F : I -> L) :
+  P j -> F j <= \join_(i | P i) F i.
+Proof. exact: (@meets_inf _ L^d). Qed.
+
+Lemma joins_min I (j : I) (l : L) (P : {pred I}) (F : I -> L) :
+  P j -> l <= F j -> l <= \join_(i | P i) F i.
+Proof. exact: (@meets_max _ L^d). Qed.
+
+Lemma joins_le J (r : seq J) (P : {pred J}) (F : J -> L) (u : L) :
+  (forall x : J, P x -> F x <= u) -> \join_(x <- r | P x) F x <= u.
+Proof. exact: (@meets_ge _ L^d). Qed.
+
+Lemma joinsP_seq T (r : seq T) (P : {pred T}) (F : T -> L) (u : L) :
+  reflect (forall x : T, x \in r -> P x -> F x <= u)
+          (\join_(x <- r | P x) F x <= u).
+Proof. exact: (@meetsP_seq _ L^d). Qed.
+
+Lemma joinsP I (u : L) (P : {pred I}) (F : I -> L) :
+  reflect (forall i : I, P i -> F i <= u) (\join_(i | P i) F i <= u).
+Proof. exact: (@meetsP _ L^d). Qed.
+
+Lemma le_joins I (A B : {set I}) (F : I -> L) :
+  A \subset B -> \join_(i in A) F i <= \join_(i in B) F i.
+Proof. exact: (@le_meets _ L^d). Qed.
+
+Lemma joins_setU I (A B : {set I}) (F : I -> L) :
+  \join_(i in (A :|: B)) F i = \join_(i in A) F i `|` \join_(i in B) F i.
+Proof. exact: (@meets_setU _ L^d). Qed.
+
+Lemma joins_seq I (r : seq I) (F : I -> L) :
+  \join_(i <- r) F i = \join_(i in r) F i.
+Proof. exact: (@meets_seq _ L^d). Qed.
+
+End BJoinTheory.
+End BJoinTheory.
+
+Module Import TJoinTheory.
+Section TJoinTheory.
+Context {disp : disp_t} {L : tJoinSemilatticeType disp}.
+
+Lemma joinx1 : right_zero \top (@join _ L). Proof. exact: (@meetx0 _ L^d). Qed.
+Lemma join1x : left_zero \top (@join _ L). Proof. exact: (@meet0x _ L^d). Qed.
+
+HB.instance Definition _ := Monoid.isMulLaw.Build L \top join join1x joinx1.
+
+End TJoinTheory.
+End TJoinTheory.
+
+Module Import LatticeTheory.
+Section LatticeTheory.
+Context {disp : disp_t} {L : latticeType disp}.
+Implicit Types (x y : L).
+
+Lemma meetUK x y : (x `&` y) `|` y = y.
+Proof. by apply/eqP; rewrite eq_joinr -eq_meetl meetIK. Qed.
+
+Lemma meetUKC x y : (y `&` x) `|` y = y. Proof. by rewrite meetC meetUK. Qed.
+Lemma meetKUC y x : x `|` (y `&` x) = x. Proof. by rewrite joinC meetUK. Qed.
+Lemma meetKU y x : x `|` (x `&` y) = x. Proof. by rewrite meetC meetKUC. Qed.
+
+Lemma joinIK x y : (x `|` y) `&` y = y.
+Proof. by apply/eqP; rewrite eq_meetr -eq_joinl joinUK. Qed.
+
+Lemma joinIKC x y : (y `|` x) `&` y = y. Proof. by rewrite joinC joinIK. Qed.
+Lemma joinKIC y x : x `&` (y `|` x) = x. Proof. by rewrite meetC joinIK. Qed.
+Lemma joinKI y x : x `&` (x `|` y) = x. Proof. by rewrite joinC joinKIC. Qed.
+
+(* comparison predicates *)
 
 Lemma lcomparableP x y : incomparel x y
   (min y x) (min x y) (max y x) (max x y)
@@ -3233,17 +3342,12 @@ Lemma lcomparable_ltP x y : x >=< y ->
                  (y `&` x) (x `&` y) (y `|` x) (x `|` y) (y <= x) (x < y).
 Proof. by move=> /lcomparable_ltgtP [xy|/ltW xy|->]; constructor. Qed.
 
-End LatticeTheoryJoin.
-End LatticeTheoryJoin.
-
-Arguments meet_idPl {disp L x y}.
-Arguments join_idPl {disp L x y}.
+End LatticeTheory.
+End LatticeTheory.
 
 Module Import DistrLatticeTheory.
 Section DistrLatticeTheory.
-Context {disp : unit}.
-Variable L : distrLatticeType disp.
-Implicit Types (x y : L).
+Context {disp : disp_t} {L : distrLatticeType disp}.
 
 Lemma meetUl : left_distributive (@meet _ L) (@join _ L).
 Proof. exact: meetUl. Qed.
@@ -3257,14 +3361,86 @@ Proof. by move=> x y z; rewrite meetUr joinIK meetUl -joinA meetUKC. Qed.
 Lemma joinIr : right_distributive (@join _ L) (@meet _ L).
 Proof. by move=> x y z; rewrite !(joinC x) -joinIl. Qed.
 
-HB.instance Definition _ := Lattice_Meet_isDistrLattice.Build _ L^d joinIl.
+HB.instance Definition _ := Monoid.isAddLaw.Build L meet join meetUl meetUr.
+HB.instance Definition _ := Monoid.isAddLaw.Build L join meet joinIl joinIr.
 
 End DistrLatticeTheory.
 End DistrLatticeTheory.
+
+Module Import BDistrLatticeTheory.
+Section BDistrLatticeTheory.
+Context {disp : disp_t} {L : bDistrLatticeType disp}.
+Implicit Types (x y z : L).
+
+Lemma leU2l_le y t x z : x `&` t = \bot -> x `|` y <= z `|` t -> x <= z.
+Proof.
+by move=> xIt0 /(leI2 (lexx x)); rewrite joinKI meetUr xIt0 joinx0 leIidl.
+Qed.
+
+Lemma leU2r_le y t x z : x `&` t = \bot -> y `|` x <= t `|` z -> x <= z.
+Proof. by rewrite joinC [_ `|` z]joinC => /leU2l_le H /H. Qed.
+
+Lemma disjoint_lexUl z x y : x `&` z = \bot -> (x <= y `|` z) = (x <= y).
+Proof.
+move=> xz0; apply/idP/idP=> xy; last by rewrite lexU2 ?xy.
+by apply: (@leU2l_le x z); rewrite ?joinxx.
+Qed.
+
+Lemma disjoint_lexUr z x y : x `&` z = \bot -> (x <= z `|` y) = (x <= y).
+Proof. by move=> xz0; rewrite joinC; rewrite disjoint_lexUl. Qed.
+
+Lemma leU2E x y z t : x `&` t = \bot -> y `&` z = \bot ->
+  (x `|` y <= z `|` t) = (x <= z) && (y <= t).
+Proof.
+move=> dxt dyz; apply/idP/andP; last by case=> ? ?; exact: leU2.
+by move=> lexyzt; rewrite (leU2l_le _ lexyzt) // (leU2r_le _ lexyzt).
+Qed.
+
+Lemma joins_disjoint (I : finType) (d : L) (P : {pred I}) (F : I -> L) :
+   (forall i : I, P i -> d `&` F i = \bot) -> d `&` \join_(i | P i) F i = \bot.
+Proof.
+move=> d_Fi_disj; have : \big[andb/true]_(i | P i) (d `&` F i == \bot).
+  rewrite big_all_cond; apply/allP => i _ /=.
+  by apply/implyP => /d_Fi_disj ->.
+elim/big_rec2: _ => [|i y]; first by rewrite meetx0.
+case; rewrite (andbF, andbT) // => Pi /(_ isT) dy /eqP dFi.
+by rewrite meetUr dy dFi joinxx.
+Qed.
+
+End BDistrLatticeTheory.
+End BDistrLatticeTheory.
+
+Module Import TDistrLatticeTheory.
+Section TDistrLatticeTheory.
+Context {disp : disp_t} {L : tDistrLatticeType disp}.
+Implicit Types (x y : L).
+
+Lemma leI2l_le y t x z : y `|` z = \top -> x `&` y <= z `&` t -> x <= z.
+Proof. by rewrite joinC; exact: (@leU2l_le _ L^d). Qed.
+
+Lemma leI2r_le y t x z : y `|` z = \top -> y `&` x <= t `&` z -> x <= z.
+Proof. by rewrite joinC; exact: (@leU2r_le _ L^d). Qed.
+
+Lemma cover_leIxl z x y : z `|` y = \top -> (x `&` z <= y) = (x <= y).
+Proof. by rewrite joinC; exact: (@disjoint_lexUl _ L^d). Qed.
+
+Lemma cover_leIxr z x y : z `|` y = \top -> (z `&` x <= y) = (x <= y).
+Proof. by rewrite joinC; exact: (@disjoint_lexUr _ L^d). Qed.
+
+Lemma leI2E x y z t : x `|` t = \top -> y `|` z = \top ->
+  (x `&` y <= z `&` t) = (x <= z) && (y <= t).
+Proof. by move=> ? ?; apply: (@leU2E _ L^d); rewrite meetC. Qed.
+
+Lemma meets_total (I : finType) (d : L) (P : {pred I}) (F : I -> L) :
+   (forall i : I, P i -> d `|` F i = \top) -> d `|` \meet_(i | P i) F i = \top.
+Proof. exact: (@joins_disjoint _ L^d). Qed.
+
+End TDistrLatticeTheory.
+End TDistrLatticeTheory.
 
 Module Import TotalTheory.
 Section TotalTheory.
-Context {disp : unit} {T : orderType disp}.
+Context {disp : disp_t} {T : orderType disp}.
 Implicit Types (x y z t : T) (s : seq T).
 
 Definition le_total : total (<=%O : rel T) := le_total.
@@ -3312,9 +3488,9 @@ Lemma leNgt x y : (x <= y) = ~~ (y < x). Proof. exact: comparable_leNgt. Qed.
 
 Lemma ltNge x y : (x < y) = ~~ (y <= x). Proof. exact: comparable_ltNge. Qed.
 
-Definition ltgtP x y := LatticeTheoryJoin.lcomparable_ltgtP (comparableT x y).
-Definition leP x y := LatticeTheoryJoin.lcomparable_leP (comparableT x y).
-Definition ltP x y := LatticeTheoryJoin.lcomparable_ltP (comparableT x y).
+Definition ltgtP x y := LatticeTheory.lcomparable_ltgtP (comparableT x y).
+Definition leP x y := LatticeTheory.lcomparable_leP (comparableT x y).
+Definition ltP x y := LatticeTheory.lcomparable_ltP (comparableT x y).
 
 Lemma wlog_le P :
      (forall x y, P y x -> P x y) -> (forall x y, x <= y -> P x y) ->
@@ -3490,7 +3666,6 @@ Lemma lteif_maxl z x y C :
 Proof. by case: C; rewrite /= (ge_max, gt_max). Qed.
 
 Section ArgExtremum.
-
 Context (I : finType) (i0 : I) (P : {pred I}) (F : I -> T) (Pi0 : P i0).
 
 Lemma arg_minP: extremum_spec <=%O P F (arg_min i0 P F).
@@ -3512,7 +3687,7 @@ by rewrite -(count_predC (>= x)) addKn; apply: eq_count => y; rewrite /= ltNge.
 Qed.
 
 Section bigminmax_Type.
-Variables (I : Type) (r : seq I) (x : T).
+Context (I : Type) (r : seq I) (x : T).
 Implicit Types (P : pred I) (F : I -> T).
 
 Lemma bigmin_mkcond P F : \big[min/x]_(i <- r | P i) F i =
@@ -3687,7 +3862,7 @@ Lemma subset_bigmax_cond [x0] (I : finType) (A A' P P' : {pred I}) (F : I -> T) 
 Proof. exact: subset_le_big_cond. Qed.
 
 Section bigminmax_eqType.
-Variable (I : eqType) (r : seq I) (x : T).
+Context (I : eqType) (r : seq I) (x : T).
 Implicit Types (P : pred I) (F : I -> T).
 
 Lemma bigmin_le_id P F : \big[min/x]_(i <- r | P i) F i <= x.
@@ -3707,7 +3882,7 @@ Proof. by move=> x_ge; apply: le_anti; rewrite bigmax_ge_id bigmax_le. Qed.
 End bigminmax_eqType.
 
 Section bigminmax_finType.
-Variable (I : finType) (x : T).
+Context (I : finType) (x : T).
 Implicit Types (P : pred I) (F : I -> T).
 
 Lemma bigminD1 j P F : P j ->
@@ -3921,7 +4096,7 @@ Arguments eq_bigmax {disp T I x} j.
 (* contra lemmas *)
 
 Section ContraTheory.
-Context {disp1 disp2 : unit} {T1 : porderType disp1} {T2 : orderType disp2}.
+Context {disp1 disp2 : disp_t} {T1 : porderType disp1} {T2 : orderType disp2}.
 Implicit Types (x y : T1) (z t : T2) (b : bool) (m n : nat) (P : Prop).
 
 Lemma contraTle b z t : (t < z -> ~~ b) -> (b -> z <= t).
@@ -3981,10 +4156,8 @@ Proof. exact: comparable_contra_lt. Qed.
 End ContraTheory.
 
 Section TotalMonotonyTheory.
-
-Context {disp : unit} {disp' : unit}.
-Context {T : orderType disp} {T' : porderType disp'}.
-Variables (D : {pred T}) (f : T -> T').
+Context {disp disp' : disp_t} {T : orderType disp} {T' : porderType disp'}.
+Context (D : {pred T}) (f : T -> T').
 Implicit Types (x y z : T) (u v w : T').
 
 Let leT_anti    := @le_anti _ T.
@@ -4045,305 +4218,30 @@ Notation le_minl := ge_min.
 
 End TotalTheory.
 
-Module Import BLatticeTheory.
-Section BLatticeTheory.
-Context {disp : unit} {L : bLatticeType disp}.
-Implicit Types (I : finType) (T : eqType) (x y z : L).
-Local Notation "\bot" := bottom.
-
-(* Non-distributive lattice theory with \bot & \top *)
-Lemma le0x x : \bot <= x. Proof. exact: le0x. Qed.
-Hint Resolve le0x : core.
-
-Lemma lex0 x : (x <= \bot) = (x == \bot).
-Proof. by rewrite le_eqVlt (le_gtF (le0x _)) orbF. Qed.
-
-Lemma ltx0 x : (x < \bot) = false.
-Proof. by rewrite lt_neqAle lex0 andNb. Qed.
-
-Lemma lt0x x : (\bot < x) = (x != \bot).
-Proof. by rewrite lt_neqAle le0x andbT eq_sym. Qed.
-
-Lemma meet0x : left_zero \bot (@meet _ L).
-Proof. by move=> x; apply/eqP; rewrite -leEmeet. Qed.
-
-Lemma meetx0 : right_zero \bot (@meet _ L).
-Proof. by move=> x; rewrite meetC meet0x. Qed.
-
-Lemma join0x : left_id \bot (@join _ L).
-Proof. by move=> x; apply/eqP; rewrite -leEjoin. Qed.
-
-Lemma joinx0 : right_id \bot (@join _ L).
-Proof. by move=> x; rewrite joinC join0x. Qed.
-
-Lemma join_eq0 x y : (x `|` y == \bot) = (x == \bot) && (y == \bot).
-Proof.
-apply/idP/idP; last by move=> /andP [/eqP-> /eqP->]; rewrite joinx0.
-by move=> /eqP xUy0; rewrite -!lex0 -xUy0 leUl leUr.
-Qed.
-
-Variant eq0_xor_gt0 x : bool -> bool -> Set :=
-    Eq0NotPOs : x = \bot -> eq0_xor_gt0 x true false
-  | POsNotEq0 : \bot < x -> eq0_xor_gt0 x false true.
-
-Lemma posxP x : eq0_xor_gt0 x (x == \bot) (\bot < x).
-Proof. by rewrite lt0x; have [] := eqVneq; constructor; rewrite ?lt0x. Qed.
-
-HB.instance Definition _ := Monoid.isComLaw.Build L \bot join
-  (@joinA _ L) (@joinC _ L) join0x.
-
-Lemma joins_sup_seq T (r : seq T) (P : {pred T}) (F : T -> L) (x : T) :
-  x \in r -> P x -> F x <= \join_(i <- r | P i) F i.
-Proof. by move=> xr Px; rewrite (big_rem x) ?Px //= leUl. Qed.
-
-Lemma joins_min_seq T (r : seq T) (P : {pred T}) (F : T -> L) (x : T) (l : L) :
-  x \in r -> P x -> l <= F x -> l <= \join_(x <- r | P x) F x.
-Proof. by move=> ? ? /le_trans; apply; apply: joins_sup_seq. Qed.
-
-Lemma joins_sup I (j : I) (P : {pred I}) (F : I -> L) :
-  P j -> F j <= \join_(i | P i) F i.
-Proof. exact: joins_sup_seq. Qed.
-
-Lemma joins_min I (j : I) (l : L) (P : {pred I}) (F : I -> L) :
-  P j -> l <= F j -> l <= \join_(i | P i) F i.
-Proof. exact: joins_min_seq. Qed.
-
-Lemma joins_le J (r : seq J) (P : {pred J}) (F : J -> L) (u : L) :
-  (forall x : J, P x -> F x <= u) -> \join_(x <- r | P x) F x <= u.
-Proof. by move=> leFm; elim/big_rec: _ => // i x Px xu; rewrite leUx leFm. Qed.
-
-Lemma joinsP_seq T (r : seq T) (P : {pred T}) (F : T -> L) (u : L) :
-  reflect (forall x : T, x \in r -> P x -> F x <= u)
-          (\join_(x <- r | P x) F x <= u).
-Proof.
-apply: (iffP idP) => leFm => [x xr Px|].
-  exact/(le_trans _ leFm)/joins_sup_seq.
-by rewrite big_seq_cond joins_le// => x /andP[/leFm].
-Qed.
-
-Lemma joinsP I (u : L) (P : {pred I}) (F : I -> L) :
-  reflect (forall i : I, P i -> F i <= u) (\join_(i | P i) F i <= u).
-Proof. by apply: (iffP (joinsP_seq _ _ _ _)) => H ? ?; apply: H. Qed.
-
-Lemma le_joins I (A B : {set I}) (F : I -> L) :
-  A \subset B -> \join_(i in A) F i <= \join_(i in B) F i.
-Proof. by move=> /subsetP AB; apply/joinsP => i iA; apply/joins_sup/AB. Qed.
-
-Lemma joins_setU I (A B : {set I}) (F : I -> L) :
-  \join_(i in (A :|: B)) F i = \join_(i in A) F i `|` \join_(i in B) F i.
-Proof.
-rewrite -!big_enum; have /= <- := @big_cat _ _ join.
-apply/eq_big_idem; first exact: joinxx.
-by move=> ?; rewrite mem_cat !mem_enum inE.
-Qed.
-
-Lemma joins_seq I (r : seq I) (F : I -> L) :
-  \join_(i <- r) F i = \join_(i in r) F i.
-Proof.
-by rewrite -big_enum; apply/eq_big_idem => ?; rewrite /= ?joinxx ?mem_enum.
-Qed.
-
-End BLatticeTheory.
-
-End BLatticeTheory.
-
-End DualTBLattice.
-
-Module Import TLatticeTheory.
-Section TLatticeTheory.
-Context {disp : unit} {L : tLatticeType disp}.
-Implicit Types (I : finType) (T : eqType) (x y : L).
-
-Local Notation "\top" := top.
-
-Lemma lex1 (x : L) : x <= top. Proof. exact: lex1. Qed.
-
-Hint Resolve lex1 : core.
-
-Lemma meetx1 : right_id \top (@meet _ L).
-Proof. by move=> x; apply/eqP; rewrite -leEmeet. Qed.
-
-Lemma meet1x : left_id \top (@meet _ L).
-Proof. by move=> x; apply/eqP; rewrite meetC meetx1. Qed.
-
-Lemma joinx1 : right_zero \top (@join _ L).
-Proof. by move=> x; apply/eqP; rewrite -leEjoin. Qed.
-
-Lemma join1x : left_zero \top (@join _ L).
-Proof. by move=> x; apply/eqP; rewrite joinC joinx1. Qed.
-
-Lemma le1x x : (\top <= x) = (x == \top).
-Proof. by rewrite le_eqVlt (le_gtF (lex1 _)) eq_sym; case: eqP. Qed.
-
-Lemma meet_eq1 x y : (x `&` y == \top) = (x == \top) && (y == \top).
-Proof.
-apply/idP/idP; last by move=> /andP[/eqP-> /eqP->]; rewrite meetx1.
-by move=> /eqP xIy1; rewrite -!le1x -xIy1 leIl leIr.
-Qed.
-
-HB.instance Definition _ := Monoid.isComLaw.Build L \top meet
-  (@meetA _ L) (@meetC _ L) meet1x.
-
-HB.instance Definition _ := Monoid.isMulLaw.Build L \top join join1x joinx1.
-
-Lemma meets_inf_seq T (r : seq T) (P : {pred T}) (F : T -> L) (x : T) :
-  x \in r -> P x -> \meet_(i <- r | P i) F i <= F x.
-Proof. by move=> xr Px; rewrite (big_rem x) ?Px //= leIl. Qed.
-
-Lemma meets_max_seq T (r : seq T) (P : {pred T}) (F : T -> L) (x : T) (u : L) :
-  x \in r -> P x -> F x <= u -> \meet_(x <- r | P x) F x <= u.
-Proof. move=> ? ?; apply: le_trans; exact: meets_inf_seq. Qed.
-
-Lemma meets_inf I (j : I) (P : {pred I}) (F : I -> L) :
-   P j -> \meet_(i | P i) F i <= F j.
-Proof. exact: meets_inf_seq. Qed.
-
-Lemma meets_max I (j : I) (u : L) (P : {pred I}) (F : I -> L) :
-   P j -> F j <= u -> \meet_(i | P i) F i <= u.
-Proof. exact: meets_max_seq. Qed.
-
-Lemma meets_ge J (r : seq J) (P : {pred J}) (F : J -> L) (u : L) :
-  (forall x : J, P x -> u <= F x) -> u <= \meet_(x <- r | P x) F x.
-Proof. by move=> leFm; elim/big_rec: _ => // i x Px xu; rewrite lexI leFm. Qed.
-
-Lemma meetsP_seq T (r : seq T) (P : {pred T}) (F : T -> L) (l : L) :
-  reflect (forall x : T, x \in r -> P x -> l <= F x)
-          (l <= \meet_(x <- r | P x) F x).
-Proof.
-apply: (iffP idP) => leFm => [x xr Px|].
-  exact/(le_trans leFm)/meets_inf_seq.
-by rewrite big_seq_cond meets_ge// => x /andP[/leFm].
-Qed.
-
-Lemma meetsP I (l : L) (P : {pred I}) (F : I -> L) :
-   reflect (forall i : I, P i -> l <= F i) (l <= \meet_(i | P i) F i).
-Proof. by apply: (iffP (meetsP_seq _ _ _ _)) => H ? ?; apply: H. Qed.
-
-Lemma le_meets I (A B : {set I}) (F : I -> L) :
-   A \subset B -> \meet_(i in B) F i <= \meet_(i in A) F i.
-Proof. by move=> /subsetP AB; apply/meetsP => i iA; apply/meets_inf/AB. Qed.
-
-Lemma meets_setU I (A B : {set I}) (F : I -> L) :
-   \meet_(i in (A :|: B)) F i = \meet_(i in A) F i `&` \meet_(i in B) F i.
-Proof.
-rewrite -!big_enum; have /= <- := @big_cat _ _ meet.
-apply/eq_big_idem; first exact: meetxx.
-by move=> ?; rewrite mem_cat !mem_enum inE.
-Qed.
-
-Lemma meets_seq I (r : seq I) (F : I -> L) :
-   \meet_(i <- r) F i = \meet_(i in r) F i.
-Proof.
-by rewrite -big_enum; apply/eq_big_idem => ?; rewrite /= ?meetxx ?mem_enum.
-Qed.
-
-End TLatticeTheory.
-
-End TLatticeTheory.
-
-Module Import TBLatticeTheory.
-Section TBLatticeTheory.
-Context {disp : unit} {L : tbLatticeType disp}.
-
-HB.instance Definition _ := Monoid.isComLaw.Build L \top meet
-  (@meetA _ L) (@meetC _ L) meet1x.
-
-HB.instance Definition _ := Monoid.isMulLaw.Build L \bot meet
-  (@meet0x _ L) (@meetx0 _ _).
-HB.instance Definition _ := Monoid.isMulLaw.Build L \top join join1x joinx1.
-
-End TBLatticeTheory.
-
-End TBLatticeTheory.
-
-Module Import BDistrLatticeTheory.
-Section BDistrLatticeTheory.
-Context {disp : unit} {L : bDistrLatticeType disp}.
-Implicit Types (I : finType) (T : eqType) (x y z : L).
-Local Notation "\bot" := bottom.
-(* Distributive lattice theory with \bot & \top *)
-
-Lemma leU2l_le y t x z : x `&` t = \bot -> x `|` y <= z `|` t -> x <= z.
-Proof.
-by move=> xIt0 /(leI2 (lexx x)); rewrite joinKI meetUr xIt0 joinx0 leIidl.
-Qed.
-
-Lemma leU2r_le y t x z : x `&` t = \bot -> y `|` x <= t `|` z -> x <= z.
-Proof. by rewrite joinC [_ `|` z]joinC => /leU2l_le H /H. Qed.
-
-Lemma disjoint_lexUl z x y : x `&` z = \bot -> (x <= y `|` z) = (x <= y).
-Proof.
-move=> xz0; apply/idP/idP=> xy; last by rewrite lexU2 ?xy.
-by apply: (@leU2l_le x z); rewrite ?joinxx.
-Qed.
-
-Lemma disjoint_lexUr z x y : x `&` z = \bot -> (x <= z `|` y) = (x <= y).
-Proof. by move=> xz0; rewrite joinC; rewrite disjoint_lexUl. Qed.
-
-Lemma leU2E x y z t : x `&` t = \bot -> y `&` z = \bot ->
-  (x `|` y <= z `|` t) = (x <= z) && (y <= t).
-Proof.
-move=> dxt dyz; apply/idP/andP; last by case=> ? ?; exact: leU2.
-by move=> lexyzt; rewrite (leU2l_le _ lexyzt) // (leU2r_le _ lexyzt).
-Qed.
-
-Lemma joins_disjoint I (d : L) (P : {pred I}) (F : I -> L) :
-   (forall i : I, P i -> d `&` F i = \bot) -> d `&` \join_(i | P i) F i = \bot.
-Proof.
-move=> d_Fi_disj; have : \big[andb/true]_(i | P i) (d `&` F i == \bot).
-  rewrite big_all_cond; apply/allP => i _ /=.
-  by apply/implyP => /d_Fi_disj ->.
-elim/big_rec2: _ => [|i y]; first by rewrite meetx0.
-case; rewrite (andbF, andbT) // => Pi /(_ isT) dy /eqP dFi.
-by rewrite meetUr dy dFi joinxx.
-Qed.
-
-End BDistrLatticeTheory.
-End BDistrLatticeTheory.
-
-Module Import TBDistrLatticeTheory.
-Section TBDistrLatticeTheory.
-Context {disp : unit} {L : tbDistrLatticeType disp}.
-Implicit Types (I : finType) (T : eqType) (x y : L).
-
-Local Notation "\top" := top.
-
-Lemma leI2l_le y t x z : y `|` z = \top -> x `&` y <= z `&` t -> x <= z.
-Proof. by rewrite joinC; exact: (@leU2l_le _ L^d). Qed.
-
-Lemma leI2r_le y t x z : y `|` z = \top -> y `&` x <= t `&` z -> x <= z.
-Proof. by rewrite joinC; exact: (@leU2r_le _ L^d). Qed.
-
-Lemma cover_leIxl z x y : z `|` y = \top -> (x `&` z <= y) = (x <= y).
-Proof. by rewrite joinC; exact: (@disjoint_lexUl _ L^d). Qed.
-
-Lemma cover_leIxr z x y : z `|` y = \top -> (z `&` x <= y) = (x <= y).
-Proof. by rewrite joinC; exact: (@disjoint_lexUr _ L^d). Qed.
-
-Lemma leI2E x y z t : x `|` t = \top -> y `|` z = \top ->
-  (x `&` y <= z `&` t) = (x <= z) && (y <= t).
-Proof. by move=> ? ?; apply: (@leU2E _ L^d); rewrite meetC. Qed.
-
-HB.instance Definition _ := Monoid.isAddLaw.Build L meet join
-  (@meetUl _ L) (@meetUr _ _).
-HB.instance Definition _ := Monoid.isAddLaw.Build L join meet
-  (@joinIl _ L) (@joinIr _ _).
-
-Lemma meets_total I (d : L) (P : {pred I}) (F : I -> L) :
-   (forall i : I, P i -> d `|` F i = \top) -> d `|` \meet_(i | P i) F i = \top.
-Proof. exact: (@joins_disjoint _ L^d). Qed.
-
-End TBDistrLatticeTheory.
-End TBDistrLatticeTheory.
+Module Import CDistrLatticeTheory.
+Section CDistrLatticeTheory.
+Context {disp : disp_t} {L : cDistrLatticeType disp}.
+Implicit Types (x y z : L).
+
+Lemma rcomplKI x y z : x <= y -> (x `|` z) `&` rcompl x y z = x.
+Proof. exact: rcomplKI. Qed.
+
+Lemma rcomplKU x y z : x <= y -> (y `&` z) `|` rcompl x y z = y.
+Proof. exact: rcomplKU. Qed.
+
+End CDistrLatticeTheory.
+End CDistrLatticeTheory.
 
 Module Import CBDistrLatticeTheory.
 Section CBDistrLatticeTheory.
-Context {disp : unit} {L : cbDistrLatticeType disp}.
+Context {disp : disp_t} {L : cbDistrLatticeType disp}.
 Implicit Types (x y z : L).
-Local Notation "\bot" := bottom.
+
+Lemma diffE x y : x `\` y = rcompl \bot x y.
+Proof. exact: diffE. Qed.
 
 Lemma diffKI x y : y `&` (x `\` y) = \bot.
-Proof. exact: diffKI. Qed.
+Proof. by have := rcomplKI y (le0x x); rewrite join0x diffE. Qed.
 
 Lemma diffIK x y : (x `\` y) `&` y = \bot.
 Proof. by rewrite meetC diffKI. Qed.
@@ -4357,7 +4255,7 @@ Lemma meetBI z x y : (x `\` y) `&` (z `&` y) = \bot.
 Proof. by rewrite meetC meetIB. Qed.
 
 Lemma joinIB y x : (x `&` y) `|` (x `\` y) = x.
-Proof. exact: joinIB. Qed.
+Proof. by rewrite diffE rcomplKU. Qed.
 
 Lemma joinBI y x : (x `\` y) `|` (x `&` y) = x.
 Proof. by rewrite joinC joinIB. Qed.
@@ -4537,28 +4435,36 @@ Proof. by move=> ?; rewrite lt_leAnge le0x leBLR joinx0 /= lt_geF. Qed.
 End CBDistrLatticeTheory.
 End CBDistrLatticeTheory.
 
+(* TODO: CTDistrLatticeTheory *)
+
 Module Import CTBDistrLatticeTheory.
 Section CTBDistrLatticeTheory.
-Context {disp : unit} {L : ctbDistrLatticeType disp}.
+Context {disp : disp_t} {L : ctbDistrLatticeType disp}.
 Implicit Types (x y z : L).
-Local Notation "\bot" := bottom.
-Local Notation "\top" := top.
 
-Lemma complE x : ~` x = \top `\` x.
-Proof. exact: complE. Qed.
+Lemma complErcompl x : ~` x = rcompl \bot \top x.
+Proof. exact: complErcompl. Qed.
+
+Lemma complEdiff x : ~` x = \top `\` x.
+Proof. by rewrite complErcompl diffE. Qed.
+#[deprecated(since="mathcomp 2.3.0", note="Use complEdiff instead.")]
+Notation complE := complEdiff.
+
+Lemma complEcodiff x : ~` x = codiff \bot x.
+Proof. by rewrite complErcompl codiffE. Qed.
 
 Lemma diff1x x : \top `\` x = ~` x.
-Proof. by rewrite complE. Qed.
+Proof. by rewrite complEdiff. Qed.
 #[deprecated(since="mathcomp 2.0.0", note="Use diff1x instead.")]
 Notation sub1x := diff1x.
 
 Lemma diffE x y : x `\` y = x `&` ~` y.
-Proof. by rewrite complE meetxB meetx1. Qed.
+Proof. by rewrite complEdiff meetxB meetx1. Qed.
 #[deprecated(since="mathcomp 2.0.0", note="Use diffE instead.")]
 Notation subE := diffE.
 
 Lemma complK : involutive (@compl _ L).
-Proof. by move=> x; rewrite !complE diffxB diffxx meet1x join0x. Qed.
+Proof. by move=> x; rewrite !complEdiff diffxB diffxx meet1x join0x. Qed.
 
 Lemma compl_inj : injective (@compl _ L).
 Proof. exact/inv_inj/complK. Qed.
@@ -4570,44 +4476,44 @@ Lemma leC x y : (~` x <= ~` y) = (y <= x).
 Proof.
 gen have leC : x y / y <= x -> ~` x <= ~` y; last first.
   by apply/idP/idP=> /leC; rewrite ?complK.
-by move=> leyx; rewrite !complE leBr.
+by move=> leyx; rewrite !complEdiff leBr.
 Qed.
 
 Lemma complU x y : ~` (x `|` y) = ~` x `&` ~` y.
-Proof. by rewrite !complE diffxU. Qed.
+Proof. by rewrite !complEdiff diffxU. Qed.
 
 Lemma complI  x y : ~` (x `&` y) = ~` x `|` ~` y.
-Proof. by rewrite !complE diffxI. Qed.
+Proof. by rewrite !complEdiff diffxI. Qed.
 
 Lemma joinxC  x :  x `|` ~` x = \top.
-Proof. by rewrite complE diffKU joinx1. Qed.
+Proof. by rewrite complEdiff diffKU joinx1. Qed.
 
 Lemma joinCx  x : ~` x `|` x = \top.
 Proof. by rewrite joinC joinxC. Qed.
 
 Lemma meetxC  x :  x `&` ~` x = \bot.
-Proof. by rewrite complE diffKI. Qed.
+Proof. by rewrite complEdiff diffKI. Qed.
 
 Lemma meetCx  x : ~` x `&` x = \bot.
 Proof. by rewrite meetC meetxC. Qed.
 
 Lemma compl1 : ~` \top = \bot :> L.
-Proof. by rewrite complE diffxx. Qed.
+Proof. by rewrite complEdiff diffxx. Qed.
 
 Lemma compl0 : ~` \bot = \top :> L.
-Proof. by rewrite complE diffx0. Qed.
+Proof. by rewrite complEdiff diffx0. Qed.
 
 Lemma complB x y : ~` (x `\` y) = ~` x `|` y.
-Proof. by rewrite !complE diffxB meet1x. Qed.
+Proof. by rewrite !complEdiff diffxB meet1x. Qed.
 
 Lemma leBC x y : x `\` y <= ~` y.
 Proof. by rewrite leBLR joinxC lex1. Qed.
 
 Lemma leCx x y : (~` x <= y) = (~` y <= x).
-Proof. by rewrite !complE !leBLR joinC. Qed.
+Proof. by rewrite !complEdiff !leBLR joinC. Qed.
 
 Lemma lexC x y : (x <= ~` y) = (y <= ~` x).
-Proof. by rewrite !complE !leBRL !lex1 meetC. Qed.
+Proof. by rewrite !complEdiff !leBRL !lex1 meetC. Qed.
 
 Lemma compl_joins (J : Type) (r : seq J) (P : {pred J}) (F : J -> L) :
    ~` (\join_(j <- r | P j) F j) = \meet_(j <- r | P j) ~` F j.
@@ -4619,6 +4525,221 @@ Proof. by elim/big_rec2: _=> [|i x y ? <-]; rewrite ?compl1 ?complI. Qed.
 
 End CTBDistrLatticeTheory.
 End CTBDistrLatticeTheory.
+
+(*************)
+(* FACTORIES *)
+(*************)
+
+(* porderType *)
+
+HB.factory Record isPOrder (d : disp_t) T of Equality T := {
+  le       : rel T;
+  lt       : rel T;
+  lt_def   : forall x y, lt x y = (y != x) && (le x y);
+  le_refl  : reflexive     le;
+  le_anti  : antisymmetric le;
+  le_trans : transitive    le;
+}.
+
+HB.builders Context d T of isPOrder d T.
+
+Fact gt_def x y : lt y x = (y != x) && (le y x).
+Proof. by rewrite lt_def eq_sym. Qed.
+
+Fact ge_anti : antisymmetric (fun x y => le y x).
+Proof. by move=> ? ? /le_anti ->. Qed.
+
+HB.instance Definition _ := @isDuallyPOrder.Build d T
+  le lt lt_def gt_def le_refl le_anti ge_anti le_trans.
+
+HB.end.
+
+HB.factory Record Le_isPOrder (d : disp_t) T of Equality T := {
+  le       : rel T;
+  le_refl  : reflexive     le;
+  le_anti  : antisymmetric le;
+  le_trans : transitive    le;
+}.
+
+HB.builders Context d T of Le_isPOrder d T.
+(* TODO: print nice error message when keyed type is not provided *)
+HB.instance Definition _ := @isPOrder.Build d T
+  le _ (fun _ _ => erefl) le_refl le_anti le_trans.
+HB.end.
+
+HB.factory Record LtLe_isPOrder (d : disp_t) T of Equality T := {
+  le : rel T;
+  lt : rel T;
+  le_def   : forall x y, le x y = (x == y) || lt x y;
+  lt_irr   : irreflexive lt;
+  lt_trans : transitive lt;
+}.
+
+HB.builders Context d T of LtLe_isPOrder d T.
+
+Let le_refl : reflexive le. Proof. by move=> x; rewrite le_def eqxx. Qed.
+
+Let le_anti : antisymmetric le.
+Proof.
+move=> x y; rewrite !le_def.
+have [//|_/=] := eqVneq x y => /andP[xy yx].
+by have := lt_trans xy yx; rewrite lt_irr.
+Qed.
+
+Let le_trans : transitive le.
+Proof.
+move=> y x z; rewrite !le_def; have [->|_]//= := eqVneq x y.
+by case: (eqVneq y z) => /= [<- ->|_ /lt_trans yx /yx ->]; rewrite orbT.
+Qed.
+
+Let lt_def x y : lt x y = (y != x) && (le x y).
+Proof. by rewrite le_def; case: eqVneq => //= ->; rewrite lt_irr. Qed.
+
+HB.instance Definition _ := @isPOrder.Build d T
+  le lt lt_def le_refl le_anti le_trans.
+
+HB.end.
+
+HB.factory Record Lt_isPOrder (d : disp_t) T of Equality T := {
+  lt       : rel T;
+  lt_irr   : irreflexive lt;
+  lt_trans : transitive  lt;
+}.
+
+HB.builders Context d T of Lt_isPOrder d T.
+HB.instance Definition _ := @LtLe_isPOrder.Build d T
+  _ lt (fun _ _ => erefl) lt_irr lt_trans.
+HB.end.
+
+(* meetSemilatticeType and joinSemilatticeType *)
+
+HB.factory Record POrder_Meet_isSemilattice d T of POrder d T := {
+  meet : T -> T -> T;
+  meetP : forall x y z, (x <= meet y z) = (x <= y) && (x <= z);
+}.
+
+HB.builders Context d T of POrder_Meet_isSemilattice d T.
+
+Fact meet_leL {x y} : meet x y <= x.
+Proof. by have:= le_refl (meet x y); rewrite meetP => /andP []. Qed.
+
+Fact meet_leR {x y} : meet x y <= y.
+Proof. by have:= le_refl (meet x y); rewrite meetP => /andP []. Qed.
+
+Fact meetC : commutative meet.
+Proof. by move=> x y; apply: le_anti; rewrite !meetP !meet_leL !meet_leR. Qed.
+
+Fact meetA : associative meet.
+Proof.
+move=> x y z; apply: le_anti.
+rewrite !meetP meet_leL meet_leR /= andbT -andbA; apply/and4P; split.
+- exact: le_trans meet_leR meet_leL.
+- exact: le_trans meet_leR meet_leR.
+- exact: le_trans meet_leL meet_leL.
+- exact: le_trans meet_leL meet_leR.
+Qed.
+
+Fact leEmeet x y : (x <= y) = (meet x y == x).
+Proof. by rewrite eq_le meetP meet_leL le_refl. Qed.
+
+HB.instance Definition _ := @POrder_isMeetSemilattice.Build d T
+  meet meetC meetA leEmeet.
+
+HB.end.
+
+HB.factory Record POrder_Join_isSemilattice d T of POrder d T := {
+  join : T -> T -> T;
+  joinP : forall x y z, (join x y <= z) = (x <= z) && (y <= z);
+}.
+
+HB.builders Context d T of POrder_Join_isSemilattice d T.
+
+Fact join_leL {x y} : x <= join x y.
+Proof. by have:= le_refl (join x y); rewrite joinP => /andP []. Qed.
+
+Fact join_leR {x y} : y <= join x y.
+Proof. by have:= le_refl (join x y); rewrite joinP => /andP []. Qed.
+
+Fact joinC : commutative join.
+Proof. by move=> x y; apply: le_anti; rewrite !joinP !join_leL !join_leR. Qed.
+
+Fact joinA : associative join.
+Proof.
+move=> x y z; apply: le_anti.
+rewrite !joinP join_leL join_leR -!andbA /=; apply/and4P; split.
+- exact: le_trans join_leL join_leL.
+- exact: le_trans join_leR join_leL.
+- exact: le_trans join_leL join_leR.
+- exact: le_trans join_leR join_leR.
+Qed.
+
+Fact leEjoin x y : (y <= x) = (join x y == x).
+Proof. by rewrite eq_le joinP join_leL le_refl andbT. Qed.
+
+HB.instance Definition _ := @POrder_isJoinSemilattice.Build d T
+  join joinC joinA leEjoin.
+
+HB.end.
+
+(* latticeType *)
+
+HB.factory Record POrder_isLattice d T of POrder d T := {
+  meet : T -> T -> T;
+  join : T -> T -> T;
+  meetC : commutative meet;
+  joinC : commutative join;
+  meetA : associative meet;
+  joinA : associative join;
+  joinKI : forall y x, meet x (join x y) = x;
+  meetKU : forall y x, join x (meet x y) = x;
+  leEmeet : forall x y, (x <= y) = (meet x y == x);
+}.
+
+HB.builders Context d T of POrder_isLattice d T.
+
+Lemma leEjoin x y : (y <= x) = (join x y == x).
+Proof.
+rewrite leEmeet; apply/eqP/eqP => <-.
+  by rewrite meetC meetKU.
+by rewrite joinC joinKI.
+Qed.
+
+HB.instance Definition _ := @POrder_isMeetSemilattice.Build d T
+  meet meetC meetA leEmeet.
+HB.instance Definition _ := @POrder_isJoinSemilattice.Build d T
+  join joinC joinA leEjoin.
+
+HB.end.
+
+HB.factory Record POrder_MeetJoin_isLattice d T of POrder d T := {
+  meet : T -> T -> T;
+  join : T -> T -> T;
+  meetP : forall x y z, (x <= meet y z) = (x <= y) && (x <= z);
+  joinP : forall x y z, (join x y <= z) = (x <= z) && (y <= z);
+}.
+
+HB.builders Context d T of POrder_MeetJoin_isLattice d T.
+HB.instance Definition _ := @POrder_Meet_isSemilattice.Build d T meet meetP.
+HB.instance Definition _ := @POrder_Join_isSemilattice.Build d T join joinP.
+HB.end.
+
+(* distrLatticeType *)
+
+HB.factory Record Lattice_Meet_isDistrLattice d T of Lattice d T := {
+  meetUl : @left_distributive T T meet join;
+}.
+
+HB.builders Context d T of Lattice_Meet_isDistrLattice d T.
+
+Let meetUr : right_distributive (@meet _ T) (@join _ T).
+Proof. by move=> x y z; rewrite ![x `&` _]meetC meetUl. Qed.
+
+Let joinIl : left_distributive (@join _ T) (@meet _ T).
+Proof. by move=> x y z; rewrite meetUr joinIK meetUl // -joinA meetUKC. Qed.
+
+HB.instance Definition _ := Lattice_isDistributive.Build d T meetUl joinIl.
+
+HB.end.
 
 HB.factory Record POrder_Meet_isDistrLattice d T of POrder d T := {
   meet : T -> T -> T;
@@ -4642,15 +4763,53 @@ HB.instance Definition _ :=
 
 HB.end.
 
+HB.factory Record isMeetJoinDistrLattice (d : disp_t) T of Choice T := {
+  le : rel T;
+  lt : rel T;
+  meet : T -> T -> T;
+  join : T -> T -> T;
+  le_def : forall x y : T, le x y = (meet x y == x);
+  lt_def : forall x y : T, lt x y = (y != x) && le x y;
+  meetC : commutative meet;
+  joinC : commutative join;
+  meetA : associative meet;
+  joinA : associative join;
+  joinKI : forall y x : T, meet x (join x y) = x;
+  meetKU : forall y x : T, join x (meet x y) = x;
+  meetUl : left_distributive meet join;
+  meetxx : idempotent meet;
+}.
+
+HB.builders Context d T of isMeetJoinDistrLattice d T.
+
+Fact le_refl : reflexive le. Proof. by move=> x; rewrite le_def meetxx. Qed.
+
+Fact le_anti : antisymmetric le.
+Proof. by move=> x y; rewrite !le_def meetC => /andP [] /eqP {2}<- /eqP ->. Qed.
+
+Fact le_trans : transitive le.
+Proof.
+move=> y x z; rewrite !le_def => /eqP lexy /eqP leyz; apply/eqP.
+by rewrite -[in LHS]lexy -meetA leyz lexy.
+Qed.
+
+HB.instance Definition _ := isPOrder.Build d T
+  lt_def le_refl le_anti le_trans.
+
+HB.instance Definition _ := POrder_Meet_isDistrLattice.Build d T
+  meetC joinC meetA joinA joinKI meetKU le_def meetUl.
+
+HB.end.
+
+(* orderType *)
+
 HB.factory Record Lattice_isTotal d T of Lattice d T := {
   le_total : total (<=%O : rel T)
 }.
 
 HB.builders Context d T of Lattice_isTotal d T.
 
-Implicit Types (x y z : T).
-
-Let comparableT x y : x >=< y := le_total x y.
+Let comparableT (x y : T) : x >=< y := le_total x y.
 
 Fact meetUl : @left_distributive T T meet join.
 Proof.
@@ -4672,8 +4831,7 @@ HB.end.
 HB.factory Record POrder_isTotal d T of POrder d T := {
   le_total : total (<=%O : rel T) }.
 
-HB.builders
-  Context d T of POrder_isTotal d T.
+HB.builders Context d T of POrder_isTotal d T.
 
 Implicit Types (x y z : T).
 
@@ -4732,122 +4890,10 @@ HB.instance Definition _ :=
   POrder_isLattice.Build d T meetC joinC meetA joinA joinKI meetKU leEmeet.
 HB.instance Definition _ :=
   Lattice_isTotal.Build d T comparableT.
-HB.end.
-
-HB.factory Record isMeetJoinDistrLattice (d : unit) T of Choice T := {
-  le : rel T;
-  lt : rel T;
-  meet : T -> T -> T;
-  join : T -> T -> T;
-  le_def : forall x y : T, le x y = (meet x y == x);
-  lt_def : forall x y : T, lt x y = (y != x) && le x y;
-  meetC : commutative meet;
-  joinC : commutative join;
-  meetA : associative meet;
-  joinA : associative join;
-  joinKI : forall y x : T, meet x (join x y) = x;
-  meetKU : forall y x : T, join x (meet x y) = x;
-  meetUl : left_distributive meet join;
-  meetxx : idempotent meet;
-}.
-
-HB.builders
-  Context (d : unit) T of isMeetJoinDistrLattice d T.
-
-Fact le_refl : reflexive le. Proof. by move=> x; rewrite le_def meetxx. Qed.
-
-Fact le_anti : antisymmetric le.
-Proof. by move=> x y; rewrite !le_def meetC => /andP [] /eqP {2}<- /eqP ->. Qed.
-
-Fact le_trans : transitive le.
-Proof.
-move=> y x z; rewrite !le_def => /eqP lexy /eqP leyz; apply/eqP.
-by rewrite -[in LHS]lexy -meetA leyz lexy.
-Qed.
-
-HB.instance Definition _ := isPOrder.Build d T
-  lt_def le_refl le_anti le_trans.
-
-HB.instance Definition _ := POrder_Meet_isDistrLattice.Build d T
-  meetC joinC meetA joinA joinKI meetKU le_def meetUl.
 
 HB.end.
 
-HB.factory Record POrder_MeetJoin_isLattice (d : unit) T of POrder d T := {
-  meet : T -> T -> T;
-  join : T -> T -> T;
-  meetP : forall x y z, (x <= meet y z) = (x <= y) && (x <= z);
-  joinP : forall x y z, (join x y <= z) = (x <= z) && (y <= z);
-}.
-
-HB.builders
-  Context (d : unit) T of POrder_MeetJoin_isLattice d T.
-
-Fact meet_lel x y : meet x y <= meet y x.
-Proof.
-have:= le_refl (meet x y); rewrite meetP => /andP [mlex mley].
-by rewrite meetP mlex mley.
-Qed.
-Fact meetC : commutative meet.
-Proof. by move=> x y; apply: le_anti; rewrite !meet_lel. Qed.
-Fact meet_leL {x y} : (meet x y) <= x.
-Proof. by have:= le_refl (meet x y); rewrite meetP => /andP []. Qed.
-Fact meet_leR {x y} : (meet x y) <= y.
-Proof. by have:= le_refl (meet x y); rewrite meetP => /andP []. Qed.
-
-Fact join_lel x y : join x y <= join y x.
-Proof.
-have:= le_refl (join y x); rewrite joinP => /andP [ylej xlej].
-by rewrite joinP ylej xlej.
-Qed.
-Fact joinC : commutative join.
-Proof. by move=> x y; apply: le_anti; rewrite !join_lel. Qed.
-Fact join_leL {x y} : x <= (join x y).
-Proof. by have:= le_refl (join x y); rewrite joinP => /andP []. Qed.
-Fact join_leR {x y} : y <= (join x y).
-Proof. by have:= le_refl (join x y); rewrite joinP => /andP []. Qed.
-
-Fact meetA : associative meet.
-Proof.
-move=> x y z; apply: le_anti.
-apply/andP; split; rewrite !meetP -?andbA; apply/and3P; split.
-- exact: meet_leL.
-- exact: le_trans meet_leR meet_leL.
-- exact: le_trans meet_leR meet_leR.
-- exact: le_trans meet_leL meet_leL.
-- exact: le_trans meet_leL meet_leR.
-- exact: meet_leR.
-Qed.
-Fact joinA : associative join.
-Proof.
-move=> x y z; apply: le_anti.
-apply/andP; split; rewrite !joinP -?andbA; apply/and3P; split.
-- exact: le_trans join_leL join_leL.
-- exact: le_trans join_leR join_leL.
-- exact: join_leR.
-- exact: join_leL.
-- exact: le_trans join_leL join_leR.
-- exact: le_trans join_leR join_leR.
-Qed.
-Fact joinKI y x : meet x (join x y) = x.
-Proof.
-apply/le_anti/andP; split; first exact: meet_leL.
-by rewrite meetP le_refl join_leL.
-Qed.
-Fact meetKU y x : join x (meet x y) = x.
-Proof.
-apply/le_anti/andP; split; last exact: join_leL.
-by rewrite joinP le_refl meet_leL.
-Qed.
-Fact leEmeet x y : (x <= y) = (meet x y == x).
-Proof. by rewrite eq_le meetP meet_leL le_refl. Qed.
-
-HB.instance Definition _ :=
-  POrder_isLattice.Build d T meetC joinC meetA joinA joinKI meetKU leEmeet.
-
-HB.end.
-
-HB.factory Record isOrder (d : unit) T of Choice T := {
+HB.factory Record isOrder (d : disp_t) T of Choice T := {
   le : rel T;
   lt : rel T;
   meet : T -> T -> T;
@@ -4860,7 +4906,7 @@ HB.factory Record isOrder (d : unit) T of Choice T := {
   le_total : total le;
 }.
 
-HB.builders Context (d : unit) T of isOrder d T.
+HB.builders Context d T of isOrder d T.
 
 Fact le_refl : reflexive le.
 Proof. by move=> x; case: (le x x) (le_total x x). Qed.
@@ -4905,7 +4951,7 @@ HB.instance Definition _ := DistrLattice_isTotal.Build d T le_total.
 
 HB.end.
 
-HB.factory Record LtOrder (d : unit) T of Choice T := {
+HB.factory Record LtOrder (d : disp_t) T of Choice T := {
   le : rel T;
   lt : rel T;
   meet : T -> T -> T;
@@ -4918,8 +4964,7 @@ HB.factory Record LtOrder (d : unit) T of Choice T := {
   lt_total : forall x y, x != y -> lt x y || lt y x;
 }.
 
-HB.builders
-  Context d T of LtOrder d T.
+HB.builders Context d T of LtOrder d T.
 
 Fact lt_def x y : lt x y = (y != x) && le x y.
 Proof. by rewrite le_def; case: eqVneq => //= ->; rewrite lt_irr. Qed.
@@ -4947,14 +4992,16 @@ Proof. by move=> x y; rewrite !le_def; case: eqVneq => //; exact: lt_total. Qed.
 
 HB.instance Definition _ :=
   isOrder.Build d T lt_def meet_def_le join_def_le le_anti le_trans le_total.
+
 HB.end.
 
 HB.factory Record MonoTotal disp T of POrder disp T := {
-  disp' : unit;
+  disp' : disp_t;
   T' : orderType disp';
   f : T -> T';
   f_mono : {mono f : x y / x <= y}
 }.
+
 HB.builders Context disp T of MonoTotal disp T.
 Lemma totalT : total (<=%O : rel T).
 Proof. by move=> x y; rewrite -!f_mono le_total. Qed.
@@ -4963,8 +5010,8 @@ HB.end.
 
 Module CancelPartial.
 Section CancelPartial.
-Variables (disp : unit) (T : choiceType).
-Variables (disp' : unit) (T' : porderType disp') (f : T -> T').
+Variables (disp : disp_t) (T : choiceType).
+Variables (disp' : disp_t) (T' : porderType disp') (f : T -> T').
 
 Section PCan.
 Variables (f' : T' -> option T) (f_can : pcancel f f').
@@ -4997,20 +5044,20 @@ Notation PcanPartial := CancelPartial.Pcan.
 Notation CanPartial := CancelPartial.Can.
 
 #[export]
-HB.instance Definition _ (disp : unit) (T : choiceType)
-  (disp' : unit) (T' : porderType disp') (f : T -> T')
+HB.instance Definition _ (disp : disp_t) (T : choiceType)
+  (disp' : disp_t) (T' : porderType disp') (f : T -> T')
   (f' : T' -> option T) (f_can : pcancel f f') : isPOrder disp (pcan_type f_can) :=
   CancelPartial.Pcan disp (f_can : @pcancel _ (pcan_type f_can)  f f').
 
 #[export]
-HB.instance Definition _ (disp : unit) (T : choiceType)
-  (disp' : unit) (T' : porderType disp') (f : T -> T') (f' : T' ->  T)
+HB.instance Definition _ (disp : disp_t) (T : choiceType)
+  (disp' : disp_t) (T' : porderType disp') (f : T -> T') (f' : T' ->  T)
   (f_can : cancel f f') : isPOrder disp (can_type f_can) :=
   CancelPartial.Can disp (f_can : @cancel _ (can_type f_can)  f f').
 
 Section CancelTotal.
-Variables (disp : unit) (T : choiceType).
-Variables (disp' : unit) (T' : orderType disp') (f : T -> T').
+Variables (disp : disp_t) (T : choiceType).
+Variables (disp' : disp_t) (T' : orderType disp') (f : T -> T').
 
 Section PCan.
 
@@ -5045,7 +5092,7 @@ Notation PcanTotal := PCanIsTotal.
 Notation CanTotal := CanIsTotal.
 
 HB.factory Record IsoLattice disp T of POrder disp T := {
-  disp' : unit;
+  disp' : disp_t;
   T' : latticeType disp';
   f : T -> T';
   f' : T' -> T;
@@ -5078,7 +5125,7 @@ HB.instance Definition _ := POrder_isLattice.Build _ T
 HB.end.
 
 HB.factory Record IsoDistrLattice disp T of POrder disp T := {
-  disp' : unit;
+  disp' : disp_t;
   T' : distrLatticeType disp';
   f : T -> T';
   f' : T' -> T;
@@ -5140,7 +5187,7 @@ Section OrderMorphismTheory.
 
 Section Properties.
 
-Variables (d : unit) (T : porderType d) (d' : unit) (T' : porderType d').
+Variables (d : disp_t) (T : porderType d) (d' : disp_t) (T' : porderType d').
 Variables (f : {omorphism T -> T'}).
 
 Lemma omorph_le : {mono f : x y / x <= y}.
@@ -5156,8 +5203,8 @@ End Properties.
 
 Section IdCompFun.
 
-Variables (d : unit) (T : porderType d) (d' : unit) (T' : porderType d').
-Variables (d'' : unit) (T'' : porderType d'').
+Variables (d : disp_t) (T : porderType d) (d' : disp_t) (T' : porderType d').
+Variables (d'' : disp_t) (T'' : porderType d'').
 Variables (f : {omorphism T' -> T''}) (g : {omorphism T -> T'}).
 
 Fact idfun_is_order_morphism : order_morphism (@idfun T).
@@ -5251,7 +5298,7 @@ Section LatticeMorphismTheory.
 
 Section Properties.
 
-Variables (d : unit) (T : latticeType d) (d' : unit) (T' : latticeType d').
+Variables (d : disp_t) (T : latticeType d) (d' : disp_t) (T' : latticeType d').
 
 Lemma omorphI (f : {mlmorphism T -> T'}) : {morph f : x y / x `&` y}.
 Proof. exact: omorphI_subproof. Qed.
@@ -5263,8 +5310,8 @@ End Properties.
 
 Section IdCompFun.
 
-Variables (d : unit) (T : latticeType d) (d' : unit) (T' : latticeType d').
-Variables (d'' : unit) (T'' : latticeType d'').
+Variables (d : disp_t) (T : latticeType d) (d' : disp_t) (T' : latticeType d').
+Variables (d'' : disp_t) (T'' : latticeType d'').
 
 Section MeetCompFun.
 
@@ -5340,7 +5387,8 @@ Section BLatticeMorphismTheory.
 
 Section Properties.
 
-Variables (d : unit) (T : bLatticeType d) (d' : unit) (T' : bLatticeType d').
+Variables (d : disp_t) (T : bLatticeType d).
+Variables (d' : disp_t) (T' : bLatticeType d').
 Variables (f : {blmorphism T -> T'}).
 
 Lemma omorph0 : f \bot = \bot.
@@ -5350,8 +5398,9 @@ End Properties.
 
 Section IdCompFun.
 
-Variables (d : unit) (T : bLatticeType d) (d' : unit) (T' : bLatticeType d').
-Variables (d'' : unit) (T'' : bLatticeType d'').
+Variables (d : disp_t) (T : bLatticeType d).
+Variables (d' : disp_t) (T' : bLatticeType d').
+Variables (d'' : disp_t) (T'' : bLatticeType d'').
 Variables (f : {blmorphism T' -> T''}) (g : {blmorphism T -> T'}).
 
 Fact idfun_is_bottom_morphism : (@idfun T) \bot = \bot. Proof. by []. Qed.
@@ -5375,7 +5424,8 @@ Section TLatticeMorphismTheory.
 
 Section Properties.
 
-Variables (d : unit) (T : tLatticeType d) (d' : unit) (T' : tLatticeType d').
+Variables (d : disp_t) (T : tLatticeType d).
+Variables (d' : disp_t) (T' : tLatticeType d').
 Variables (f : {tlmorphism T -> T'}).
 
 Lemma omorph1 : f \top = \top.
@@ -5385,8 +5435,9 @@ End Properties.
 
 Section IdCompFun.
 
-Variables (d : unit) (T : tLatticeType d) (d' : unit) (T' : tLatticeType d').
-Variables (d'' : unit) (T'' : tLatticeType d'').
+Variables (d : disp_t) (T : tLatticeType d).
+Variables (d' : disp_t) (T' : tLatticeType d').
+Variables (d'' : disp_t) (T'' : tLatticeType d'').
 Variables (f : {tlmorphism T' -> T''}) (g : {tlmorphism T -> T'}).
 
 Fact idfun_is_top_morphism : (@idfun T) \top = \top. Proof. by []. Qed.
@@ -5408,7 +5459,7 @@ End TLatticeMorphismTheory.
 Module Import ClosedPredicates.
 Section ClosedPredicates.
 
-Variable (d : unit) (T : latticeType d).
+Variable (d : disp_t) (T : latticeType d).
 Variable S : {pred T}.
 
 Definition meet_closed := {in S &, forall u v, u `&` v \in S}.
@@ -5494,7 +5545,7 @@ HB.end.
 Module Import LatticePred.
 Section LatticePred.
 
-Variables (d : unit) (T : latticeType d).
+Variables (d : disp_t) (T : latticeType d).
 
 Lemma opredI (S : meetLatticeClosed T) : {in S &, forall u v, u `&` v \in S}.
 Proof. exact: opredI. Qed.
@@ -5506,7 +5557,7 @@ End LatticePred.
 
 Section BLatticePred.
 
-Variables (d : unit) (T : bLatticeType d).
+Variables (d : disp_t) (T : bLatticeType d).
 
 Lemma opred0 (S : bLatticeClosed T) : \bot \in S.
 Proof. exact: opred0. Qed.
@@ -5519,7 +5570,7 @@ End BLatticePred.
 
 Section TLatticePred.
 
-Variables (d : unit) (T : tLatticeType d).
+Variables (d : disp_t) (T : tLatticeType d).
 
 Lemma opred1 (S : tLatticeClosed T) : \top \in S.
 Proof. exact: opred1. Qed.
@@ -5542,18 +5593,17 @@ HB.structure Definition SubPOrder d (T : porderType d) S d' :=
 
 Module Import SubPOrderTheory.
 Section SubPOrderTheory.
-Context (d : unit) (T : porderType d) (S : pred T).
-Context (d' : unit) (U : SubPOrder.type S d').
-Local Notation val := (val : U -> T).
+Context (d : disp_t) (T : porderType d) (S : pred T).
+Context (d' : disp_t) (U : SubPOrder.type S d').
 HB.instance Definition _ := isOrderMorphism.Build d' U d T val val_le_subproof.
-Lemma leEsub x y : (x <= y) = (val x <= val y).
+Lemma leEsub (x y : U) : (x <= y) = (val x <= val y).
 Proof. by rewrite omorph_le. Qed.
-Lemma ltEsub x y : (x < y) = (val x < val y).
+Lemma ltEsub (x y : U) : (x < y) = (val x < val y).
 Proof. by rewrite omorph_lt. Qed.
 End SubPOrderTheory.
 End SubPOrderTheory.
 
-HB.factory Record SubChoice_isSubPOrder d (T : porderType d) S (d' : unit) U
+HB.factory Record SubChoice_isSubPOrder d (T : porderType d) S (d' : disp_t) U
     of SubChoice T S U := {}.
 
 HB.builders Context d T S d' U of SubChoice_isSubPOrder d T S d' U.
@@ -5563,7 +5613,7 @@ HB.instance Definition _ := isSubPOrder.Build d T S d' U valD.
 HB.end.
 
 #[export]
-HB.instance Definition _ d (T : porderType d) (S : pred T) (d' : unit)
+HB.instance Definition _ d (T : porderType d) (S : pred T) (d' : disp_t)
   (U : subType S) := SubChoice_isSubPOrder.Build d T S d' (sub_type U).
 
 HB.mixin Record isMeetSubLattice d (T : latticeType d) (S : pred T) d' U
@@ -5641,12 +5691,12 @@ HB.structure Definition SubTBLattice d (T : latticeType d) S d' :=
   { U of @SubLattice d T S d' U & TBLattice d' U }.
 
 #[export]
-HB.instance Definition _ (d : unit) (T : latticeType d) (S : pred T)
+HB.instance Definition _ (d : disp_t) (T : latticeType d) (S : pred T)
     d' (U : MeetSubLattice.type S d') :=
   isMeetLatticeMorphism.Build d' U d T val valI_subproof.
 
 #[export]
-HB.instance Definition _ (d : unit) (T : latticeType d) (S : pred T)
+HB.instance Definition _ (d : disp_t) (T : latticeType d) (S : pred T)
     d' (U : JoinSubLattice.type S d') :=
   isJoinLatticeMorphism.Build d' U d T val valU_subproof.
 
@@ -5690,7 +5740,7 @@ HB.instance Definition _ := isMeetSubLattice.Build d T S d' U valI.
 HB.instance Definition _ := isJoinSubLattice.Build d T S d' U valU.
 HB.end.
 
-HB.factory Record SubChoice_isSubLattice d (T : latticeType d) S (d' : unit) U
+HB.factory Record SubChoice_isSubLattice d (T : latticeType d) S (d' : disp_t) U
     of SubChoice T S U := {
   opredI_subproof : meet_closed S;
   opredU_subproof : join_closed S;
@@ -5724,7 +5774,7 @@ HB.structure Definition BSubTLattice d (T : bLatticeType d) S d' :=
   { U of @BSubLattice d T S d' U & TBLattice d' U }.
 
 #[export]
-HB.instance Definition _ (d : unit) (T : bLatticeType d) (S : pred T)
+HB.instance Definition _ (d : disp_t) (T : bLatticeType d) (S : pred T)
     d' (U : BJoinSubLattice.type S d') :=
   isBLatticeMorphism.Build d' U d T val val0_subproof.
 
@@ -5745,8 +5795,8 @@ Fact val0 : (val : U -> T) \bot = \bot. Proof. by rewrite SubK. Qed.
 HB.instance Definition _ := isBSubLattice.Build d T S d' U val0.
 HB.end.
 
-HB.factory Record SubChoice_isBSubLattice d (T : bLatticeType d) S (d' : unit) U
-    of SubChoice T S U := {
+HB.factory Record SubChoice_isBSubLattice
+    d (T : bLatticeType d) S (d' : disp_t) U of SubChoice T S U := {
   opredI_subproof : meet_closed S;
   opredU_subproof : join_closed S;
   opred0_subproof : \bot \in S;
@@ -5781,7 +5831,7 @@ HB.structure Definition TSubBLattice d (T : tLatticeType d) S d' :=
   { U of @TSubLattice d T S d' U & TBLattice d' U }.
 
 #[export]
-HB.instance Definition _ (d : unit) (T : tLatticeType d) (S : pred T)
+HB.instance Definition _ (d : disp_t) (T : tLatticeType d) (S : pred T)
     d' (U : TMeetSubLattice.type S d') :=
   isTLatticeMorphism.Build d' U d T val val1_subproof.
 
@@ -5802,8 +5852,8 @@ Fact val1 : (val : U -> T) \top = \top. Proof. by rewrite SubK. Qed.
 HB.instance Definition _ := isTSubLattice.Build d T S d' U val1.
 HB.end.
 
-HB.factory Record SubChoice_isTSubLattice d (T : tLatticeType d) S (d' : unit) U
-    of SubChoice T S U := {
+HB.factory Record SubChoice_isTSubLattice
+    d (T : tLatticeType d) S (d' : disp_t) U of SubChoice T S U := {
   opredI_subproof : meet_closed S;
   opredU_subproof : join_closed S;
   opred1_subproof : \top \in S;
@@ -5821,7 +5871,7 @@ HB.structure Definition TBSubLattice d (T : tbLatticeType d) S d' :=
   { U of @BSubLattice d T S d' U & @TSubLattice d T S d' U}.
 
 #[export]
-HB.instance Definition _ (d : unit) (T : tbLatticeType d) (S : pred T) d'
+HB.instance Definition _ (d : disp_t) (T : tbLatticeType d) (S : pred T) d'
     (U : TBSubLattice.type S d') := BLatticeMorphism.on (val : U -> T).
 
 HB.factory Record SubPOrder_isTBSubLattice d (T : tbLatticeType d) S d' U
@@ -5838,7 +5888,7 @@ HB.instance Definition _ := SubPOrder_isTSubLattice.Build d T S d' U
 HB.end.
 
 HB.factory Record SubChoice_isTBSubLattice d (T : tbLatticeType d) S
-    (d' : unit) U of SubChoice T S U := {
+    (d' : disp_t) U of SubChoice T S U := {
   opredI_subproof : meet_closed S;
   opredU_subproof : join_closed S;
   opred0_subproof : \bot \in S;
@@ -5877,7 +5927,7 @@ HB.instance Definition _ := SubPOrder_isSubLattice.Build d T S d' U opredI opred
 HB.instance Definition _ := SubLattice_isSubOrder.Build d T S d' U.
 HB.end.
 
-HB.factory Record SubChoice_isSubOrder d (T : orderType d) S (d' : unit) U
+HB.factory Record SubChoice_isSubOrder d (T : orderType d) S (d' : disp_t) U
     of @SubChoice T S U := {}.
 
 HB.builders Context d T S d' U of SubChoice_isSubOrder d T S d' U.
@@ -5996,7 +6046,7 @@ HB.export SubOrderExports.
 Module DeprecatedSubOrder.
 
 Section Total.
-Context {disp : unit} {T : orderType disp} (P : {pred T}) (sT : subType P).
+Context {disp : disp_t} {T : orderType disp} (P : {pred T}) (sT : subType P).
 
 #[export]
 HB.instance Definition _ :=
