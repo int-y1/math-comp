@@ -1227,7 +1227,7 @@ Unset Primitive Projections.
 
 Definition disp_tt := {| d1 := tt; d2 := tt |}.
 
-#[key="T"] (* TODO: primitive *)
+#[key="T", primitive]
 HB.mixin Record isDuallyPOrder (d : disp_t) T of Equality T := {
   le       : rel T;
   lt       : rel T;
@@ -1243,13 +1243,13 @@ HB.mixin Record isDuallyPOrder (d : disp_t) T of Equality T := {
 HB.structure Definition POrder (d : disp_t) :=
   { T of Choice T & isDuallyPOrder d T }.
 
-#[key="T"] (* TODO: primitive *)
+#[key="T", primitive]
 HB.mixin Record hasBottom d T of POrder d T := {
   bottom : T;
   le0x : forall x, le bottom x;
 }.
 
-#[key="T"] (* TODO: primitive *)
+#[key="T", primitive]
 HB.mixin Record hasTop d T of POrder d T := {
   top : T;
   lex1 : forall x, le x top;
@@ -1459,13 +1459,13 @@ Coercion le_of_leif : leif >-> is_true.
 End POCoercions.
 HB.export POCoercions.
 
-#[key="T"] (* TODO: primitive *)
+#[key="T", primitive]
 HB.mixin Record POrder_isMeetSemilattice d T of POrder d T := {
   meet : T -> T -> T;
   lexI : forall x y z, (x <= meet y z) = (x <= y) && (x <= z);
 }.
 
-#[key="T"] (* TODO: primitive *)
+#[key="T", primitive]
 HB.mixin Record POrder_isJoinSemilattice d T of POrder d T := {
   join : T -> T -> T;
   leUx : forall x y z, (join x y <= z) = (x <= z) && (y <= z);
@@ -1650,7 +1650,7 @@ Notation "\meet_ ( i 'in' A ) F" :=
 End TLatticeSyntax.
 HB.export TLatticeSyntax.
 
-#[key="T"] (* TODO: primitive *)
+#[key="T", primitive]
 HB.mixin Record Lattice_isDistributive d (T : Type) of Lattice d T := {
   meetUl : @left_distributive T T meet join;
   joinIl : @left_distributive T T join meet; (* dual of meetUl *)
@@ -1686,7 +1686,7 @@ Notation "[ 'tbDistrLatticeType' 'of' T ]" := (TBDistrLattice.clone _ T%type _)
 End TBDistrLatticeExports.
 HB.export TBDistrLatticeExports.
 
-#[key="T"] (* TODO: primitive *)
+#[key="T", primitive]
 HB.mixin Record DistrLattice_isTotal d T of DistrLattice d T :=
   { le_total : total (<=%O : rel T) }.
 
@@ -1703,12 +1703,13 @@ HB.structure Definition TTotal d := { T of Total d T & hasTop d T }.
 #[short(type="tbOrderType")]
 HB.structure Definition TBTotal d := { T of BTotal d T & hasTop d T }.
 
-#[key="T"] (* TODO: primitive *)
+#[key="T", primitive]
 HB.mixin Record hasRelativeComplement d T of DistrLattice d T := {
   (* rcompl x y z is the complement of z in the interval [x, y]. *)
   rcompl : T -> T -> T -> T;
   rcomplKI : forall x y z, x <= y -> (x `|` z) `&` rcompl x y z = x;
   rcomplKU : forall x y z, x <= y -> (y `&` z) `|` rcompl x y z = y;
+  (* TODO: try to replace the axioms with below *)
   (* rcomplPmeet : forall x y z, ((x `&` y) `|` z) `&` rcompl x y z = x `&` y; *)
   (* rcomplPjoin : forall x y z, ((y `|` x) `&` z) `|` rcompl x y z = y `|` x; *)
 }.
@@ -1717,7 +1718,7 @@ HB.mixin Record hasRelativeComplement d T of DistrLattice d T := {
 HB.structure Definition CDistrLattice d :=
   { T of DistrLattice d T & hasRelativeComplement d T }.
 
-#[key="T"] (* TODO: primitive *)
+#[key="T", primitive]
 HB.mixin Record hasSectionalComplement d T
          of CDistrLattice d T & hasBottom d T := {
   diff : T -> T -> T;
@@ -1728,7 +1729,7 @@ HB.mixin Record hasSectionalComplement d T
 HB.structure Definition CBDistrLattice d :=
   { T of CDistrLattice d T & hasBottom d T & hasSectionalComplement d T }.
 
-#[key="T"] (* TODO: primitive *)
+#[key="T", primitive]
 HB.mixin Record hasDualSectionalComplement d T
          of CDistrLattice d T & hasTop d T := {
   codiff : T -> T -> T;
@@ -1746,7 +1747,7 @@ Module Import CBDistrLatticeSyntax.
 Notation "x `\` y" := (diff x y) : order_scope.
 End CBDistrLatticeSyntax.
 
-#[key="T"] (* TODO: primitive *)
+#[key="T", primitive]
 HB.mixin Record hasComplement d T of
          CTDistrLattice d T & CBDistrLattice d T := {
   compl : T -> T;
@@ -4648,7 +4649,18 @@ Proof. by move=> ?; rewrite lt_leAnge le0x leBLR joinx0 /= lt_geF. Qed.
 End CBDistrLatticeTheory.
 End CBDistrLatticeTheory.
 
-(* TODO: CTDistrLatticeTheory *)
+Module Import CTDistrLatticeTheory.
+Section CTDistrLatticeTheory.
+Context {disp : disp_t} {L : ctDistrLatticeType disp}.
+Implicit Types (x y z : L).
+
+Lemma codiffErcompl x y : codiff x y = rcompl x \top y.
+Proof. exact: codiffErcompl. Qed.
+
+(* TODO: complete this theory module *)
+
+End CTDistrLatticeTheory.
+End CTDistrLatticeTheory.
 
 Module Import CTBDistrLatticeTheory.
 Section CTBDistrLatticeTheory.
